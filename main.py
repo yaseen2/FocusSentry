@@ -197,8 +197,8 @@ class GazeReaderApp(QObject):
             if self.study_time_left <= 0:
                 self.transition_pomodoro_phase()
 
-        # Exit early if we are not actively inside a Study Pomodoro
-        if not self.pomodoro_active:
+        # Exit early if we are not actively inside a Study Pomodoro OR if we are on a break
+        if not self.pomodoro_active or self.pomodoro_phase == "BREAK":
             return
 
         # Distraction logs updates
@@ -305,15 +305,34 @@ class GazeReaderApp(QObject):
     def transition_pomodoro_phase(self):
         # Play completion chime sound
         winsound.MessageBeep(winsound.MB_ICONASTERISK)
+        from PyQt6.QtWidgets import QSystemTrayIcon
         
         if self.pomodoro_phase == "FOCUS":
             self.pomodoro_phase = "BREAK"
             self.study_time_left = 10 * 60 # 10-minute break
             self.save_study_session()
             self.dashboard.update_journal_metrics()
+            self.clear_all_overlays() # Clear any active lockout overlays during break
+            
+            # Show native Windows system tray notification
+            self.tray_icon.showMessage(
+                "FocusSentry - Break Time!",
+                "Great work! 50-minute study complete. Take a 10-minute break and stretch!",
+                QSystemTrayIcon.MessageIcon.Information,
+                6000
+            )
         else:
             self.pomodoro_phase = "FOCUS"
             self.study_time_left = 50 * 60 # 50-minute study
+            self.phone_pickup_warnings = 0 # reset warnings
+            
+            # Show native Windows system tray notification
+            self.tray_icon.showMessage(
+                "FocusSentry - Focus Time!",
+                "Break is over! Time to focus. 50-minute study session started.",
+                QSystemTrayIcon.MessageIcon.Information,
+                6000
+            )
             
         self.dashboard.update_timer_label(self.study_time_left, self.pomodoro_phase)
 
