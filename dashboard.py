@@ -295,6 +295,23 @@ class StudyDashboard(QWidget):
         pitch_row.addWidget(self.pitch_val_lbl)
         pref_layout.addLayout(pitch_row)
 
+        # Eye Roll Slider Row
+        eye_row = QHBoxLayout()
+        eye_lbl = QLabel("Eye Roll Limit (Glance aside):", pref_card)
+        eye_lbl.setFont(QFont("Inter", 9))
+        self.eye_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
+        self.eye_slider.setRange(20, 45)
+        self.eye_slider.setValue(int(database.get_setting("eye_roll_threshold", 35)))
+        self.eye_val_lbl = QLabel(f"{self.eye_slider.value()}%", pref_card)
+        self.eye_val_lbl.setFixedWidth(28)
+        self.eye_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.eye_slider.valueChanged.connect(self.update_eye_threshold)
+        
+        eye_row.addWidget(eye_lbl)
+        eye_row.addWidget(self.eye_slider)
+        eye_row.addWidget(self.eye_val_lbl)
+        pref_layout.addLayout(eye_row)
+
         # Delay Slider Row
         delay_row = QHBoxLayout()
         delay_lbl = QLabel("Warning Alert Delay:", pref_card)
@@ -618,6 +635,10 @@ class StudyDashboard(QWidget):
     def update_pitch_threshold(self, val):
         self.pitch_val_lbl.setText(f"{val}°")
         database.save_setting("pitch_threshold", val)
+
+    def update_eye_threshold(self, val):
+        self.eye_val_lbl.setText(f"{val}%")
+        database.save_setting("eye_roll_threshold", val)
 
     def update_warning_delay(self, val):
         self.delay_val_lbl.setText(f"{val}s")

@@ -58,6 +58,11 @@ def init_db():
     if not row or row[0] == "5":
         cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('warning_delay', '4')")
         
+    cursor.execute("SELECT value FROM settings WHERE key = 'eye_roll_threshold'")
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('eye_roll_threshold', '35')")
+        
     conn.commit()
     conn.close()
 

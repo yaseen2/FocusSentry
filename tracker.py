@@ -4,6 +4,7 @@ import numpy as np
 import math
 import time
 import os
+import database
 from PyQt6.QtCore import QThread, pyqtSignal
 
 class FaceGazeTracker(QThread):
@@ -155,7 +156,8 @@ class FaceGazeTracker(QThread):
                         h_ratio = (ratio_hl + ratio_hr) / 2.0
 
                         # Flag eye distractions if pupil is looking extremely left/right (rolling)
-                        if h_ratio < 0.35 or h_ratio > 0.65:
+                        eye_limit = float(database.get_setting("eye_roll_threshold", 35)) / 100.0
+                        if h_ratio < eye_limit or h_ratio > (1.0 - eye_limit):
                             is_eye_distracted = True
                     except Exception:
                         is_eye_distracted = False
