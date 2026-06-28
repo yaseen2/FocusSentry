@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center_horizontal"
+    android:background="#0b0f19">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="👁️ GazeReader Mobile"
+        android:textColor="#6366f1"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="30dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Laptop IP Address"
+        android:textColor="#94a3b8"
+        android:textSize="14sp"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/etIp"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="e.g. 192.168.1.15"
+        android:textColor="#f8fafc"
+        android:textColorHint="#475569"
+        android:inputType="phone"
+        android:background="@android:drawable/editbox_background_normal"
+        android:padding="10dp"
+        android:layout_marginBottom="20dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Laptop Port"
+        android:textColor="#94a3b8"
+        android:textSize="14sp"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/etPort"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="5001"
+        android:textColor="#f8fafc"
+        android:textColorHint="#475569"
+        android:inputType="number"
+        android:background="@android:drawable/editbox_background_normal"
+        android:padding="10dp"
+        android:layout_marginBottom="25dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Motion Threshold (Sensitivity)"
+        android:textColor="#94a3b8"
+        android:textSize="14sp"
+        android:layout_marginBottom="6dp" />
+
+    <SeekBar
+        android:id="@+id/sbSensitivity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="50"
+        android:progress="20"
+        android:layout_marginBottom="10dp" />
+
+    <TextView
+        android:id="@+id/tvSensVal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2.0 m/s²"
+        android:textColor="#cbd5e1"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="40dp" />
+
+    <Button
+        android:id="@+id/btnToggle"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:text="Start Tracking"
+        android:textColor="#ffffff"
+        android:backgroundTint="#6366f1"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

@@ -1,0 +1,307 @@
+/* GazeReader Injected Elements Stylesheet */
+
+/* System overlays container markers (non-blurred targets) */
+.heg-overlay-system {
+  font-family: 'Inter', sans-serif !important;
+  color-scheme: dark !important;
+}
+
+/* 1. Page Blurring Rule */
+body.heg-blurred > :not(.heg-overlay-system) {
+  filter: blur(10px) grayscale(0.4) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  transition: filter 0.4s ease-out !important;
+}
+
+/* 2. Pulsing Amber Screen Border (Pre-Warning Stage 2) */
+body.heg-pre-warning::after {
+  content: '' !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border: 4px solid #f59e0b !important;
+  box-shadow: inset 0 0 35px rgba(245, 158, 11, 0.45) !important;
+  pointer-events: none !important;
+  z-index: 99990 !important;
+  animation: heg-pulse-border 1.5s infinite alternate !important;
+}
+
+@keyframes heg-pulse-border {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.85; }
+}
+
+/* 3. Floating Pre-Warning Banner */
+#heg-pre-warning-banner {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: rgba(245, 158, 11, 0.18) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  border-top: none !important;
+  padding: 10px 24px !important;
+  border-radius: 0 0 12px 12px !important;
+  z-index: 100020 !important;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25) !important;
+  display: none;
+  animation: heg-slide-down 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.heg-banner-text {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #f59e0b !important;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.2) !important;
+}
+
+#heg-countdown-number {
+  background: #f59e0b !important;
+  color: #0b111e !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  margin-left: 2px !important;
+}
+
+@keyframes heg-slide-down {
+  0% { transform: translate(-50%, -100%); opacity: 0; }
+  100% { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* 4. Glassmorphic Lockout Overlay (Stage 3 Distraction) */
+#heg-locked-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(8, 6, 16, 0.82) !important;
+  backdrop-filter: blur(12px) !important;
+  z-index: 100030 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.heg-block-card {
+  background: rgba(18, 14, 28, 0.9) !important;
+  border: 2px solid rgba(244, 63, 94, 0.35) !important;
+  border-radius: 16px !important;
+  padding: 40px !important;
+  max-width: 420px !important;
+  width: 90% !important;
+  text-align: center !important;
+  box-shadow: 0 0 40px rgba(244, 63, 94, 0.3) !important;
+  animation: heg-scale-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.heg-block-icon {
+  font-size: 60px !important;
+  margin-bottom: 16px !important;
+  animation: heg-pulse-alert 1.5s infinite !important;
+}
+
+.heg-block-card h2 {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  margin-bottom: 12px !important;
+  color: #f43f5e !important;
+  text-shadow: 0 0 10px rgba(244, 63, 94, 0.2) !important;
+  line-height: 1.2 !important;
+}
+
+.heg-block-card p {
+  font-size: 14px !important;
+  color: #94a3b8 !important;
+  line-height: 1.5 !important;
+  margin-bottom: 20px !important;
+}
+
+.heg-btn {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 10px 24px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  cursor: pointer !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25) !important;
+  transition: all 0.2s ease !important;
+  display: inline-block !important;
+}
+
+.heg-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35) !important;
+}
+
+@keyframes heg-scale-up {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes heg-pulse-alert {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(244, 63, 94, 0.5)); }
+}
+
+/* 5. Gaze Calibration Canvas Overlay */
+#heg-calibration-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(6, 4, 12, 0.95) !important;
+  z-index: 100040 !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.heg-calib-modal {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  padding: 30px !important;
+  max-width: 440px !important;
+  width: 90% !important;
+  text-align: center !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  animation: heg-scale-up 0.3s ease-out !important;
+}
+
+.heg-calib-modal h2 {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  margin-bottom: 12px !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.heg-calib-modal p {
+  font-size: 13px !important;
+  color: #94a3b8 !important;
+  line-height: 1.5 !important;
+}
+
+/* Calibration Floating Target Points */
+.heg-calib-point {
+  position: absolute !important;
+  width: 32px !important;
+  height: 32px !important;
+  background: #f43f5e !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  z-index: 100050 !important;
+  transform: translate(-50%, -50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: white !important;
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.6) !important;
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s !important;
+  animation: heg-pulse-dot 1.8s infinite !important;
+}
+
+.heg-calib-point:hover {
+  transform: translate(-50%, -50%) scale(1.15) !important;
+}
+
+.heg-calib-point:active {
+  transform: translate(-50%, -50%) scale(0.9) !important;
+}
+
+.heg-calib-point[data-clicks="1"] { background-color: #f59e0b !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6) !important; }
+.heg-calib-point[data-clicks="2"] { background-color: #d97706 !important; box-shadow: 0 0 15px rgba(217, 119, 6, 0.6) !important; }
+.heg-calib-point[data-clicks="3"] { background-color: #10b981 !important; box-shadow: 0 0 15px rgba(16, 185, 129, 0.6) !important; }
+.heg-calib-point[data-clicks="4"] { background-color: #059669 !important; box-shadow: 0 0 15px rgba(5, 150, 105, 0.6) !important; }
+.heg-calib-point[data-clicks="5"] { 
+  background-color: #eab308 !important; 
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.8) !important;
+  transform: translate(-50%, -50%) scale(0) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@keyframes heg-pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+  70% { box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
+/* 6. Floating Webcam Card styles */
+#heg-webcam-card {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  width: 200px !important;
+  height: 160px !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  z-index: 100100 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: all 0.3s ease !important;
+}
+
+#heg-webcam-card.collapsed {
+  height: 38px !important;
+}
+
+.heg-webcam-header {
+  height: 38px !important;
+  min-height: 38px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  cursor: grab !important;
+  user-select: none !important;
+}
+
+.heg-webcam-toggle {
+  cursor: pointer !important;
+  font-size: 13px !important;
+  color: #64748b !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+.heg-webcam-toggle:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.heg-webcam-body {
+  flex: 1 !important;
+  position: relative !important;
+  background: #000 !important;
+  overflow: hidden !important;
+}
+
+#webgazerVideoContainerCustom {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+}
+

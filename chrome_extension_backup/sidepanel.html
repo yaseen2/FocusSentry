@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GazeReader Control Panel</title>
+  <!-- Google Fonts for UI styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-app: #080a10;
+      --bg-card: #111522;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+      --accent-color: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --danger-color: #f43f5e;
+      --warning-color: #eab308;
+      --success-color: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      min-height: 100vh;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--text-muted);
+      border-radius: 3px;
+    }
+
+    /* Typography styling */
+    h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* Sections */
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Logo Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 4px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo {
+      font-size: 24px;
+    }
+
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .badge {
+      font-size: 9px;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    .status-panel-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 4px;
+    }
+
+    /* Indicator Light */
+    .indicator-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .indicator-light {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .indicator-light.red { background-color: var(--danger-color); box-shadow: 0 0 6px var(--danger-color); }
+    .indicator-light.yellow { background-color: var(--warning-color); box-shadow: 0 0 6px var(--warning-color); }
+    .indicator-light.green { background-color: var(--success-color); box-shadow: 0 0 6px var(--success-color); }
+
+    /* Buttons */
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.12);
+      color: var(--danger-color);
+      border: 1px solid rgba(244, 63, 94, 0.25);
+    }
+    .btn-danger:hover {
+      background: rgba(244, 63, 94, 0.2);
+    }
+
+    /* Pomodoro block */
+    .timer-display-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+    }
+
+    .timer-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    .timer-phase {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .help-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Blacklist Tags */
+    .blacklist-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-height: 10px;
+    }
+
+    .blacklist-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(244, 63, 94, 0.12);
+      color: var(--danger-color);
+      border: 1px solid rgba(244, 63, 94, 0.2);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .blacklist-remove {
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 11px;
+    }
+
+    .add-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .add-row input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      outline: none;
+    }
+    .add-row input:focus {
+      border-color: var(--accent-color);
+    }
+
+    .add-row button {
+      width: 32px;
+      padding: 0;
+      font-size: 14px;
+    }
+
+    /* Study Journal Telemetry */
+    .journal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .j-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+    }
+
+    .j-val {
+      font-size: 16px;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .j-label {
+      font-size: 9px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* Mini chart */
+    .mini-chart {
+      height: 60px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-top: 10px;
+    }
+
+    .mini-chart-bar {
+      flex: 1;
+      margin: 0 2px;
+      border-radius: 2px 2px 0 0;
+      min-height: 2px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .bar-seg-active {
+      background: var(--accent-color);
+      border-radius: 2px 2px 0 0;
+    }
+
+    .bar-seg-distracted {
+      background: var(--danger-color);
+      border-radius: 2px 2px 0 0;
+    }
+
+    .chart-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .checkbox-label input {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--accent-color);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <span class="logo">👁️</span>
+      <span class="logo-text">GazeReader</span>
+    </div>
+    <span class="badge">HEG</span>
+  </div>
+
+  <!-- Camera Section -->
+  <div class="section-card">
+    <h4>🎯 Eye Tracking Status</h4>
+    <div class="status-panel-info">
+      <div class="indicator-wrapper">
+        <div class="indicator-light red" id="status-dot"></div>
+        <span id="status-text" style="font-weight:600;">Standby (Off)</span>
+      </div>
+      <span id="calib-progress">Clicks: 0/45</span>
+    </div>
+    <div class="options-grid">
+      <button class="btn btn-primary" id="btn-recalibrate">🎯 Calibrate</button>
+      <button class="btn btn-secondary" id="btn-skip-calib">Skip</button>
+    </div>
+  </div>
+
+  <!-- Pomodoro Section -->
+  <div class="section-card">
+    <h4>🍅 Study Pomodoro (50 / 10)</h4>
+    <div class="timer-display-wrapper">
+      <div class="timer-val" id="pomodoro-timer">50:00</div>
+      <div class="timer-phase" id="pomodoro-phase">FOCUS</div>
+    </div>
+    <button class="btn btn-primary" id="btn-toggle-pomodoro">🍅 Start Pomodoro</button>
+    <div class="help-desc">
+      Clock pauses automatically if you navigate to blacklisted domains or look away from the page.
+    </div>
+  </div>
+
+  <!-- Distraction Blacklist -->
+  <div class="section-card">
+    <h4>🚫 Blacklisted Domains</h4>
+    <div id="blacklist-tags-container" class="blacklist-tags">
+      <!-- Tag pills populated via sidepanel.js -->
+    </div>
+    <div class="add-row">
+      <input type="text" id="txt-new-blacklist" placeholder="e.g. facebook.com">
+      <button class="btn btn-secondary" id="btn-add-blacklist">+</button>
+    </div>
+  </div>
+
+  <!-- Study Journal Telemetry -->
+  <div class="section-card">
+    <h4>📈 Study Journal (Last 7 Days)</h4>
+    <div class="journal-grid">
+      <div class="j-card">
+        <div class="j-val" id="journal-val-active">0m</div>
+        <div class="j-label">Focused</div>
+      </div>
+      <div class="j-card">
+        <div class="j-val" id="journal-val-distracted" style="color:var(--danger-color);">0m</div>
+        <div class="j-label">Distracted</div>
+      </div>
+      <div class="j-card">
+        <div class="j-val" id="journal-val-ratio">100%</div>
+        <div class="j-label">Efficiency</div>
+      </div>
+    </div>
+
+    <!-- Mini chart overlay -->
+    <div class="mini-chart" id="journal-chart">
+      <!-- Bars populated dynamically -->
+    </div>
+    <div class="chart-label-row">
+      <span>Mon</span>
+      <span>Tue</span>
+      <span>Wed</span>
+      <span>Thu</span>
+      <span>Fri</span>
+      <span>Sat</span>
+      <span>Sun</span>
+    </div>
+    <button class="btn btn-danger" id="btn-journal-reset" style="padding:6px; font-size:10px;">Reset History</button>
+  </div>
+
+  <!-- Visual Telemetry Options -->
+  <div class="section-card">
+    <h4>⚙️ Preferences</h4>
+    <div class="control-group" style="display:flex; flex-direction:column; gap:8px;">
+      <label class="checkbox-label">
+        <input type="checkbox" id="chk-show-dot" checked>
+        <span>Show Pointer on Webpage</span>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="chk-auto-scroll" checked>
+        <span>Enable Auto-Scroll</span>
+      </label>
+    </div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

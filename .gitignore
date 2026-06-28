@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database and Journal files
+*.db
+*.db-journal
+gaze_study_journal.db
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Android Studio / Gradle generated
+.gradle/
+build/
+local.properties
+.idea/
+*.apk
+captures/
+.cxx/
+*.keystore
+*.jks
+
+# Logs
+run_err.txt
+diag_log.txt
+*.log

@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "GazeReader - Study Focus Companion",
+  "version": "2.2.0",
+  "description": "Tracks your eyes and overlays spotlights and distraction alerts on any tab to keep you focused.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "sidePanel"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Toggle GazeReader panel"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "css": ["content_script.css"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["webgazer.js", "main_world.js"],
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["webgazer.js", "main_world.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
