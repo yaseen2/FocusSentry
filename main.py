@@ -90,6 +90,7 @@ class GazeReaderApp(QObject):
         self.dashboard.blacklist_updated.connect(self.handle_blacklist_update)
         self.dashboard.set_center_requested.connect(self.calibrate_center_baseline)
         self.dashboard.resume_suspend_detected.connect(self.run_adb_reverse)
+        self.dashboard.adapt_hotkey_pressed.connect(self.dismiss_lock_state)
         
         # Bind overlays back resume actions
         for ov in self.overlays:

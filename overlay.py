@@ -238,8 +238,8 @@ class DesktopOverlay(QWidget):
             painter.drawRect(0, 0, w, h)
 
     def keyPressEvent(self, event):
-        # Allow dismissing lock screen by pressing Spacebar or Enter
-        if self.state == "DISTRACTED" and event.key() in (Qt.Key.Key_Space, Qt.Key.Key_Return):
+        # Allow dismissing lock screen by pressing the Escape key
+        if self.state == "DISTRACTED" and event.key() == Qt.Key.Key_Escape:
             self.request_resume()
         else:
             super().keyPressEvent(event)

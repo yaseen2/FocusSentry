@@ -20,6 +20,7 @@ class StudyDashboard(QWidget):
     recalibrate_requested = pyqtSignal()
     set_center_requested = pyqtSignal()
     resume_suspend_detected = pyqtSignal()
+    adapt_hotkey_pressed = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -856,18 +857,20 @@ class StudyDashboard(QWidget):
             ctypes.windll.user32.UnregisterHotKey.argtypes = [wintypes.HWND, ctypes.c_int]
             ctypes.windll.user32.UnregisterHotKey.restype = wintypes.BOOL
             
-            # MOD_ALT = 0x0001, MOD_CONTROL = 0x0002. Key 0x50 = 'P'
+            # MOD_ALT = 0x0001, MOD_CONTROL = 0x0002. Key 0x50 = 'P', Key 0x41 = 'A'
             ctypes.windll.user32.RegisterHotKey(hwnd, 99, 0x0001 | 0x0002, 0x50)
+            ctypes.windll.user32.RegisterHotKey(hwnd, 100, 0x0001 | 0x0002, 0x41)
             
             from PyQt6.QtCore import QCoreApplication
             QCoreApplication.instance().aboutToQuit.connect(self.unregister_global_hotkey)
         except Exception as e:
-            print("Failed to register global hotkey Alt+Ctrl+P:", e)
+            print("Failed to register global hotkeys Alt+Ctrl+P/A:", e)
 
     def unregister_global_hotkey(self):
         try:
             hwnd = int(self.winId())
             ctypes.windll.user32.UnregisterHotKey(hwnd, 99)
+            ctypes.windll.user32.UnregisterHotKey(hwnd, 100)
         except Exception:
             pass
 
@@ -879,6 +882,9 @@ class StudyDashboard(QWidget):
                 msg = msg_ptr.contents
                 if msg.message == 0x0312 and msg.wParam == 99:
                     self.toggle_pomodoro()
+                    return True, 0
+                elif msg.message == 0x0312 and msg.wParam == 100:
+                    self.adapt_hotkey_pressed.emit()
                     return True, 0
                 elif msg.message == 0x0218 and msg.wParam == 0x0012:
                     # WM_POWERBROADCAST and PBT_APMRESUMESUSPEND (system resuming from sleep/hibernate)
