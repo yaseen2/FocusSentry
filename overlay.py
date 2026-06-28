@@ -179,9 +179,16 @@ class DesktopOverlay(QWidget):
         h = self.height()
         
         if self.state == "PRE_WARNING":
-            # 1. Draw glowing amber screen border pen (radial gradient style border)
-            pen = QPen(QColor(245, 158, 11, self.pulse_alpha))
-            pen.setWidth(8)
+            # Check if this is a phone distraction warning
+            is_phone = "Phone" in self.countdown_reason
+            border_color = QColor(244, 63, 94, self.pulse_alpha) if is_phone else QColor(245, 158, 11, self.pulse_alpha)
+            bg_color = QColor(15, 5, 5, 230) if is_phone else QColor(15, 10, 5, 230)
+            text_color = QColor(244, 63, 94) if is_phone else QColor(245, 158, 11)
+            badge_color = QColor(244, 63, 94) if is_phone else QColor(245, 158, 11)
+            
+            # 1. Draw glowing screen border pen (thicker red for phone warning)
+            pen = QPen(border_color)
+            pen.setWidth(12 if is_phone else 8)
             painter.setPen(pen)
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRect(0, 0, w, h)
@@ -191,15 +198,18 @@ class DesktopOverlay(QWidget):
             bx = (w - banner_w) // 2
             by = 0 # sits at top of monitor screen
             
-            # Draw banner background (amber tint translucent glassmorphism)
-            painter.setPen(QPen(QColor(245, 158, 11, 100), 1))
-            painter.setBrush(QBrush(QColor(15, 10, 5, 230)))
-            painter.drawRoundedRect(bx, by, banner_w, banner_h, 0, 8, Qt.SizeMode.AbsoluteSize) # bottom rounded
+            # Draw banner background
+            painter.setPen(QPen(border_color, 1))
+            painter.setBrush(QBrush(bg_color))
+            painter.drawRoundedRect(bx, by, banner_w, banner_h, 0, 8, Qt.SizeMode.AbsoluteSize)
             
             # Draw Text
-            painter.setPen(QColor(245, 158, 11))
+            painter.setPen(text_color)
             painter.setFont(QFont("Inter", 10, QFont.Weight.Bold))
-            banner_text = f"🕒 Focus check: {self.countdown_reason}. Wiggle mouse or type to dismiss...  "
+            if is_phone:
+                banner_text = f"📱 Phone Alert: {self.countdown_reason}... "
+            else:
+                banner_text = f"🕒 Focus check: {self.countdown_reason}. Wiggle mouse to dismiss... "
             painter.drawText(QRect(bx + 15, by, banner_w - 70, banner_h), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, banner_text)
             
             # Draw Countdown Badge
@@ -207,7 +217,7 @@ class DesktopOverlay(QWidget):
             badge_x = bx + banner_w - 35
             badge_y = by + (banner_h - badge_h) // 2
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(QColor(245, 158, 11)))
+            painter.setBrush(QBrush(badge_color))
             painter.drawRoundedRect(badge_x, badge_y, badge_w, badge_h, 4, 4)
             
             painter.setPen(QColor(11, 17, 30))

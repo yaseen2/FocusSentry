@@ -47,6 +47,7 @@ class GazeReaderApp(QObject):
         
         self.active_study_seconds = 0
         self.distracted_study_seconds = 0
+        self.phone_pickup_warnings = 0
         self.last_tracker_update = 0.0
         self.tracker_data = {"yaw": 0.0, "pitch": 0.0, "roll": 0.0, "face_present": False}
         self.yaw_offset = 0.0
@@ -165,6 +166,7 @@ class GazeReaderApp(QObject):
             self.pomodoro_phase = "FOCUS"
             self.active_study_seconds = 0
             self.distracted_study_seconds = 0
+            self.phone_pickup_warnings = 0
             self.pomo_action.setText("⏹️ Stop Pomodoro")
             
             # Start camera tracker thread
@@ -213,7 +215,17 @@ class GazeReaderApp(QObject):
             phone_active_event.clear()
             
         if phone_triggered:
-            self.trigger_all_overlays_warning("Phone Activity (Mobile App)")
+            self.phone_pickup_warnings += 1
+            if self.phone_pickup_warnings >= 3:
+                database.log_distraction("Phone Distraction Limit Exceeded (3 Pickups)", 1)
+                import ctypes
+                try:
+                    ctypes.windll.user32.LockWorkStation()
+                except Exception as e:
+                    print("Failed to lock Windows workstation:", e)
+                self.trigger_all_overlays_lockout("Phone Limit Exceeded (3/3 Pickups) - Computer Locked")
+            else:
+                self.trigger_all_overlays_warning(f"Phone Activity Detected ({self.phone_pickup_warnings}/3 Pickups)")
             return
 
         # 2. Analyze Camera Landmark Feed
