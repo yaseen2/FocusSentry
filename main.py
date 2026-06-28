@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import math
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
@@ -52,6 +53,9 @@ class GazeReaderApp(QObject):
         self.tracker_data = {"yaw": 0.0, "pitch": 0.0, "roll": 0.0, "face_present": False}
         self.yaw_offset = 0.0
         self.pitch_offset = 0.0
+        self.last_offending_yaw = 0.0
+        self.last_offending_pitch = 0.0
+        self.last_warning_time = 0.0
         
         # 1. Initialize UI Controls
         self.dashboard = StudyDashboard()
@@ -272,6 +276,9 @@ class GazeReaderApp(QObject):
             elif self.tracker_data.get("eye_distracted", False):
                 self.trigger_all_overlays_warning("Eye Rolling Detected")
             elif abs(calibrated_yaw) > yaw_limit or abs(calibrated_pitch) > pitch_limit:
+                self.last_offending_yaw = calibrated_yaw
+                self.last_offending_pitch = calibrated_pitch
+                self.last_warning_time = time.time()
                 self.trigger_all_overlays_warning("Looking Away")
             else:
                 # User is on-task (only increment active seconds if we are not currently locked out)
@@ -304,10 +311,34 @@ class GazeReaderApp(QObject):
             ov.clear_overlay()
 
     def dismiss_lock_state(self):
+        # 1. Adapt threshold if the user resumes within 15 seconds of a posture warning
+        now = time.time()
+        if (now - self.last_warning_time) < 15.0:
+            yaw_limit = float(database.get_setting("yaw_threshold", 18.0))
+            pitch_limit = float(database.get_setting("pitch_threshold", 14.0))
+            
+            adjusted = False
+            # Expand yaw limit if user was flagged for horizontal look-away
+            if abs(self.last_offending_yaw) > yaw_limit:
+                new_yaw = math.ceil(abs(self.last_offending_yaw)) + 2
+                new_yaw = min(100, new_yaw)
+                database.save_setting("yaw_threshold", new_yaw)
+                self.dashboard.yaw_slider.setValue(new_yaw)
+                adjusted = True
+                
+            # Expand pitch limit if user was flagged for vertical look-away
+            if abs(self.last_offending_pitch) > pitch_limit:
+                new_pitch = math.ceil(abs(self.last_offending_pitch)) + 2
+                new_pitch = min(100, new_pitch)
+                database.save_setting("pitch_threshold", new_pitch)
+                self.dashboard.pitch_slider.setValue(new_pitch)
+                adjusted = True
+                
+            if adjusted:
+                self.dashboard.lbl_calib_state.setText("Postural limits auto-adapted!")
+                
         # Dismiss locked frames and reset interaction pings
         self.clear_all_overlays()
-        # Fake a user wiggle to give them 25 seconds window
-        pass
 
     # --- Pomodoro Transitions ---
     def transition_pomodoro_phase(self):
