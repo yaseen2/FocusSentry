@@ -3,7 +3,7 @@
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.9+-green.svg)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Android-blue.svg)](https://github.com)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Donate-FF813F?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/YOUR_USERNAME)
+[![Support on Gumroad](https://img.shields.io/badge/Support%20on%20Gumroad-Donate-FF90E8?style=for-the-badge&logo=gumroad)](https://waziryaseen.gumroad.com/coffee)
 
 **FocusSentry** is a real-time, AI-powered productivity companion that uses computer vision and physical motion sensors to eliminate distractions. By pairing a Windows desktop agent with an Android companion client, FocusSentry blocks your screen when you look away, roll your eyes, or pick up your mobile phone during a Pomodoro session.
 
@@ -93,8 +93,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## ☕ Support My Work
 
-If FocusSentry helped you stay focused and boost your productivity, consider buying me a coffee! Your support helps keep this project updated and free of bugs.
+If FocusSentry helped you stay focused and boost your productivity, consider supporting its development! 
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/YOUR_USERNAME)
+You can buy me a coffee or make a custom contribution directly on my Gumroad support page:
 
-* Replace `YOUR_USERNAME` in the links above with your actual Buy Me a Coffee username.
+[![Support on Gumroad](https://img.shields.io/badge/Support%20on%20Gumroad-Donate-FF90E8?style=for-the-badge&logo=gumroad)](https://waziryaseen.gumroad.com/coffee)
