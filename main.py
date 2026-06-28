@@ -201,9 +201,16 @@ class GazeReaderApp(QObject):
         if not self.pomodoro_active or self.pomodoro_phase == "BREAK":
             return
 
-        # Distraction logs updates
-        if is_distracted:
+        # 1. Track distracted seconds if the overlay is currently active (warning or lockout)
+        is_overlay_blocking = False
+        if len(self.overlays) > 0 and self.overlays[0].state in ["PRE_WARNING", "DISTRACTED"]:
+            is_overlay_blocking = True
             self.distracted_study_seconds += 1
+
+        # Distraction logs updates (blacklist apps)
+        if is_distracted:
+            if not is_overlay_blocking:
+                self.distracted_study_seconds += 1
             database.log_distraction(detail_reason, 1)
             self.trigger_all_overlays_lockout(detail_reason)
             return
@@ -267,8 +274,9 @@ class GazeReaderApp(QObject):
             elif abs(calibrated_yaw) > yaw_limit or abs(calibrated_pitch) > pitch_limit:
                 self.trigger_all_overlays_warning("Looking Away")
             else:
-                # User is on-task
-                self.active_study_seconds += 1
+                # User is on-task (only increment active seconds if we are not currently locked out)
+                if not is_overlay_blocking:
+                    self.active_study_seconds += 1
                 self.clear_all_overlays()
 
         # Handle active countdown triggers to Stage 3 Lockout

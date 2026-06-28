@@ -426,10 +426,70 @@ class StudyDashboard(QWidget):
         journal_layout.setContentsMargins(16, 16, 16, 16)
         journal_layout.setSpacing(14)
 
+        # Title and Filter Row
+        title_row = QHBoxLayout()
+        
         journal_title = QLabel("📈 STUDY JOURNAL SUMMARY", self.journal_card)
         journal_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
         journal_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
-        journal_layout.addWidget(journal_title)
+        title_row.addWidget(journal_title)
+        
+        # Filter buttons container
+        self.filter_group = QFrame(self.journal_card)
+        self.filter_group.setStyleSheet("""
+            QFrame {
+                background: rgba(255,255,255,0.02);
+                border: 1px solid rgba(255,255,255,0.04);
+                border-radius: 6px;
+            }
+        """)
+        filter_layout = QHBoxLayout(self.filter_group)
+        filter_layout.setContentsMargins(2, 2, 2, 2)
+        filter_layout.setSpacing(2)
+        
+        self.btn_filter_day = QPushButton("Day", self.filter_group)
+        self.btn_filter_week = QPushButton("Week", self.filter_group)
+        self.btn_filter_month = QPushButton("Month", self.filter_group)
+        
+        # Flat style for tab buttons
+        button_style = """
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #64748b;
+                font-family: 'Inter';
+                font-size: 10px;
+                font-weight: bold;
+                padding: 4px 10px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                color: #f8fafc;
+                background: rgba(255,255,255,0.02);
+            }
+            QPushButton[active="true"] {
+                color: #ffffff;
+                background: #6366f1;
+            }
+        """
+        self.btn_filter_day.setStyleSheet(button_style)
+        self.btn_filter_week.setStyleSheet(button_style)
+        self.btn_filter_month.setStyleSheet(button_style)
+        
+        # Track current active filter mode
+        self.current_filter_mode = "WEEK" # DAY, WEEK, MONTH
+        self.btn_filter_week.setProperty("active", "true")
+        
+        filter_layout.addWidget(self.btn_filter_day)
+        filter_layout.addWidget(self.btn_filter_week)
+        filter_layout.addWidget(self.btn_filter_month)
+        
+        title_row.addWidget(self.filter_group, 0, Qt.AlignmentFlag.AlignRight)
+        journal_layout.addLayout(title_row)
+        
+        self.btn_filter_day.clicked.connect(lambda: self.change_filter_mode("DAY"))
+        self.btn_filter_week.clicked.connect(lambda: self.change_filter_mode("WEEK"))
+        self.btn_filter_month.clicked.connect(lambda: self.change_filter_mode("MONTH"))
 
         # Metrics rows (stacked side-by-side, larger sizes!)
         grid_layout = QHBoxLayout()
@@ -494,15 +554,30 @@ class StudyDashboard(QWidget):
         grid_layout.addWidget(self.j_card3)
         journal_layout.addLayout(grid_layout)
         
-        # Mini bar chart frame (Highly expanded for tall bars!)
-        self.chart_frame = QFrame(self.journal_card)
-        self.chart_frame.setFixedHeight(180)
-        self.chart_frame.setStyleSheet("background: rgba(255,255,255,0.01); border-top: 1px solid rgba(255,255,255,0.04);")
+        # Scroll Area for mini bar chart (to handle 24h or 30d without truncation)
+        from PyQt6.QtWidgets import QScrollArea
+        self.chart_scroll = QScrollArea(self.journal_card)
+        self.chart_scroll.setFixedHeight(180)
+        self.chart_scroll.setWidgetResizable(True)
+        self.chart_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.chart_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.chart_scroll.setStyleSheet("""
+            QScrollArea {
+                background: rgba(255,255,255,0.01);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.04);
+            }
+        """)
+        
+        self.chart_frame = QFrame()
+        self.chart_frame.setStyleSheet("background: transparent;")
         self.chart_layout = QHBoxLayout(self.chart_frame)
         self.chart_layout.setContentsMargins(10, 20, 10, 8)
-        self.chart_layout.setSpacing(8)
-        self.chart_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        journal_layout.addWidget(self.chart_frame)
+        self.chart_layout.setSpacing(10)
+        self.chart_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
+        
+        self.chart_scroll.setWidget(self.chart_frame)
+        journal_layout.addWidget(self.chart_scroll)
         col3_layout.addWidget(self.journal_card)
         
         cols_layout.addLayout(col3_layout)
@@ -630,7 +705,12 @@ class StudyDashboard(QWidget):
 
     # --- Journal Statistics drawing ---
     def update_journal_metrics(self):
-        history = database.get_7_day_history()
+        if self.current_filter_mode == "DAY":
+            history = database.get_daily_hourly_history()
+        elif self.current_filter_mode == "MONTH":
+            history = database.get_monthly_history()
+        else:
+            history = database.get_7_day_history()
         
         total_active = 0
         total_distracted = 0
@@ -785,3 +865,26 @@ class StudyDashboard(QWidget):
             except Exception as e:
                 print("Error parsing native message:", e)
         return False, 0
+
+    def change_filter_mode(self, mode):
+        self.current_filter_mode = mode
+        
+        # Reset properties
+        self.btn_filter_day.setProperty("active", "false")
+        self.btn_filter_week.setProperty("active", "false")
+        self.btn_filter_month.setProperty("active", "false")
+        
+        if mode == "DAY":
+            self.btn_filter_day.setProperty("active", "true")
+        elif mode == "WEEK":
+            self.btn_filter_week.setProperty("active", "true")
+        elif mode == "MONTH":
+            self.btn_filter_month.setProperty("active", "true")
+            
+        # Refresh stylesheets to apply active state changes
+        self.btn_filter_day.setStyle(self.btn_filter_day.style())
+        self.btn_filter_week.setStyle(self.btn_filter_week.style())
+        self.btn_filter_month.setStyle(self.btn_filter_month.style())
+        
+        # Reload charts
+        self.update_journal_metrics()

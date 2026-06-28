@@ -183,5 +183,47 @@ def get_setting(key, default):
                 return val
     return default
 
+def get_daily_hourly_history():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    one_day_ago = int(time.time()) - 24 * 3600
+    cursor.execute("""
+        SELECT 
+            strftime('%H', datetime(timestamp, 'unixepoch', 'localtime')) as time_key,
+            SUM(active_seconds) as active_seconds,
+            SUM(distracted_seconds) as distracted_seconds
+        FROM study_sessions
+        WHERE timestamp > ?
+        GROUP BY time_key
+        ORDER BY time_key ASC
+    """, (one_day_ago,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    res = []
+    for r in rows:
+        d = dict(r)
+        d["day"] = f"{d['time_key']}h"
+        res.append(d)
+    return res
+
+def get_monthly_history():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    thirty_days_ago = int(time.time()) - 30 * 24 * 3600
+    cursor.execute("""
+        SELECT 
+            strftime('%m-%d', datetime(timestamp, 'unixepoch', 'localtime')) as day,
+            SUM(active_seconds) as active_seconds,
+            SUM(distracted_seconds) as distracted_seconds
+        FROM study_sessions
+        WHERE timestamp > ?
+        GROUP BY day
+        ORDER BY timestamp ASC LIMIT 30
+    """, (thirty_days_ago,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 # Initialize database on module load
 init_db()
