@@ -24,6 +24,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sbSensitivity: SeekBar
     private lateinit var tvSensVal: TextView
     private lateinit var btnToggle: Button
+    private lateinit var btnTestLocal: Button
+    private lateinit var btnTestCloud: Button
     private lateinit var rgMode: android.widget.RadioGroup
     private lateinit var rbLocal: android.widget.RadioButton
     private lateinit var rbCloud: android.widget.RadioButton
@@ -42,6 +44,8 @@ class MainActivity : AppCompatActivity() {
         sbSensitivity = findViewById(R.id.sbSensitivity)
         tvSensVal = findViewById(R.id.tvSensVal)
         btnToggle = findViewById(R.id.btnToggle)
+        btnTestLocal = findViewById(R.id.btnTestLocal)
+        btnTestCloud = findViewById(R.id.btnTestCloud)
         rgMode = findViewById(R.id.rgMode)
         rbLocal = findViewById(R.id.rbLocal)
         rbCloud = findViewById(R.id.rbCloud)
@@ -89,6 +93,83 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        btnTestLocal.setOnClickListener {
+            val ip = etIp.text.toString().trim()
+            val port = etPort.text.toString().trim()
+            if (ip.isEmpty() || port.isEmpty()) {
+                Toast.makeText(this, "Please enter IP and Port first", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            Toast.makeText(this, "Testing Local Sockets connection...", Toast.LENGTH_SHORT).show()
+            Thread {
+                try {
+                    val url = java.net.URL("http://$ip:$port/ping")
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 3000
+                    conn.readTimeout = 3000
+                    conn.requestMethod = "GET"
+                    val code = conn.responseCode
+                    conn.disconnect()
+                    
+                    runOnUiThread {
+                        Toast.makeText(this, "✅ Local Ping Success! (HTTP $code)", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    runOnUiThread {
+                        Toast.makeText(this, "❌ Local Ping Failed! Check IP/Port & make sure desktop app is active.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }.start()
+        }
+
+        btnTestCloud.setOnClickListener {
+            var firebaseUrl = etFirebaseUrl.text.toString().trim()
+            val firebasePath = etFirebasePath.text.toString().trim()
+            if (firebaseUrl.isEmpty() || firebasePath.isEmpty()) {
+                Toast.makeText(this, "Please enter Firebase URL and Path first", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            // Sanitize URL
+            if (!firebaseUrl.startsWith("http")) {
+                firebaseUrl = "https://$firebaseUrl"
+            }
+            if (firebaseUrl.endsWith("/")) {
+                firebaseUrl = firebaseUrl.substring(0, firebaseUrl.length - 1)
+            }
+            
+            Toast.makeText(this, "Testing Firebase Cloud connection...", Toast.LENGTH_SHORT).show()
+            Thread {
+                try {
+                    val url = java.net.URL("$firebaseUrl/users/$firebasePath/test_signal.json")
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 4000
+                    conn.readTimeout = 4000
+                    conn.requestMethod = "PUT"
+                    conn.doOutput = true
+                    conn.setRequestProperty("Content-Type", "application/json")
+                    conn.outputStream.write("true".toByteArray())
+                    val code = conn.responseCode
+                    conn.disconnect()
+                    
+                    runOnUiThread {
+                        if (code in 200..299) {
+                            Toast.makeText(this, "✅ Firebase Link Success! (HTTP $code)", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(this, "❌ Firebase Link Failed! HTTP $code", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    runOnUiThread {
+                        Toast.makeText(this, "❌ Firebase Link Failed! Check URL & internet connection.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }.start()
+        }
 
         btnToggle.setOnClickListener {
             val isCloud = rbCloud.isChecked
