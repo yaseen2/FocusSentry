@@ -35,6 +35,16 @@
         android:inputType="phone"
         android:background="@android:drawable/editbox_background_normal"
         android:padding="10dp"
+        android:layout_marginBottom="10dp" />
+
+    <Button
+        android:id="@+id/btnAutoDetect"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:text="🔍 Auto-Detect IP (Wi-Fi)"
+        android:textColor="#ffffff"
+        android:backgroundTint="#1e293b"
+        android:textSize="12sp"
         android:layout_marginBottom="20dp" />
 
     <TextView

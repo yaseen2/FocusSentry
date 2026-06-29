@@ -11,6 +11,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sbSensitivity: SeekBar
     private lateinit var tvSensVal: TextView
     private lateinit var btnToggle: Button
+    private lateinit var btnAutoDetect: Button
     private lateinit var prefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         sbSensitivity = findViewById(R.id.sbSensitivity)
         tvSensVal = findViewById(R.id.tvSensVal)
         btnToggle = findViewById(R.id.btnToggle)
+        btnAutoDetect = findViewById(R.id.btnAutoDetect)
 
         prefs = getSharedPreferences("GazeReaderPrefs", Context.MODE_PRIVATE)
 
@@ -49,6 +54,43 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        btnAutoDetect.setOnClickListener {
+            Toast.makeText(this, "Searching for FocusSentry on local network...", Toast.LENGTH_SHORT).show()
+            Thread {
+                var socket: DatagramSocket? = null
+                try {
+                    socket = DatagramSocket()
+                    socket.broadcast = true
+                    socket.soTimeout = 3000 // 3 seconds timeout
+                    
+                    val message = "FOCUS_SENTRY_DISCOVER".toByteArray()
+                    val address = InetAddress.getByName("255.255.255.255")
+                    val packet = DatagramPacket(message, message.size, address, 5002)
+                    socket.send(packet)
+                    
+                    val buffer = ByteArray(1024)
+                    val receivePacket = DatagramPacket(buffer, buffer.size)
+                    socket.receive(receivePacket)
+                    
+                    val response = String(receivePacket.data, 0, receivePacket.length)
+                    if (response == "FOCUS_SENTRY_RESPONSE") {
+                        val discoveredIp = receivePacket.address.hostAddress
+                        runOnUiThread {
+                            etIp.setText(discoveredIp)
+                            Toast.makeText(this, "FocusSentry found at: $discoveredIp", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    runOnUiThread {
+                        Toast.makeText(this, "Auto-detect failed. Make sure desktop app is running.", Toast.LENGTH_LONG).show()
+                    }
+                } finally {
+                    socket?.close()
+                }
+            }.start()
+        }
 
         btnToggle.setOnClickListener {
             val ip = etIp.text.toString().trim()

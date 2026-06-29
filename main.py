@@ -85,6 +85,10 @@ class GazeReaderApp(QObject):
         self.server_thread.start()
         self.run_adb_reverse()
         
+        # 6. Start background UDP discovery responder server
+        self.udp_thread = threading.Thread(target=self.run_udp_discovery_server, daemon=True)
+        self.udp_thread.start()
+        
         # Bind dashboard actions
         self.dashboard.pomodoro_toggled.connect(self.handle_pomodoro_toggle)
         self.dashboard.blacklist_updated.connect(self.handle_blacklist_update)
@@ -397,6 +401,23 @@ class GazeReaderApp(QObject):
             self.server.serve_forever()
         except Exception as e:
             print("Failed to start phone sensor HTTP server:", e)
+
+    def run_udp_discovery_server(self):
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sock.bind(("", 5002))
+        except Exception as e:
+            print("Failed to start UDP discovery server:", e)
+            return
+
+        while True:
+            try:
+                data, addr = sock.recvfrom(1024)
+                if data == b"FOCUS_SENTRY_DISCOVER":
+                    sock.sendto(b"FOCUS_SENTRY_RESPONSE", addr)
+            except Exception:
+                time.sleep(1)
 
     def run_adb_reverse(self):
         try:
