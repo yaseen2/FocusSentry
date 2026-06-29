@@ -235,6 +235,24 @@ class StudyDashboard(QWidget):
         calib_row.addWidget(self.lbl_calib_state)
         calib_row.addStretch()
         status_layout.addLayout(calib_row)
+        
+        # Phone Link Status (Row 3)
+        phone_row = QHBoxLayout()
+        phone_row.setSpacing(6)
+        
+        self.phone_dot = QWidget(self.status_card)
+        self.phone_dot.setFixedSize(10, 10)
+        self.phone_dot.setStyleSheet("background-color: #64748b; border-radius: 5px;")
+        
+        self.phone_lbl = QLabel("Phone Link: Offline", self.status_card)
+        self.phone_lbl.setFont(QFont("Inter", 10, QFont.Weight.Medium))
+        self.phone_lbl.setStyleSheet("color: #94a3b8;")
+        
+        phone_row.addWidget(self.phone_dot)
+        phone_row.addWidget(self.phone_lbl)
+        phone_row.addStretch()
+        status_layout.addLayout(phone_row)
+        
         col1_layout.addWidget(self.status_card)
 
         # Preferences Card
@@ -1023,6 +1041,20 @@ class StudyDashboard(QWidget):
         elif colorClass == "red": color_hex = "#f43f5e"
         
         self.dot.setStyleSheet(f"background-color: {color_hex}; border-radius: 5px;")
+
+    def set_phone_status(self, state, msg=""):
+        if state == "connected":
+            self.phone_dot.setStyleSheet("background-color: #10b981; border-radius: 5px;")
+            self.phone_lbl.setText(f"Phone Link: Connected ({msg})" if msg else "Phone Link: Connected")
+            self.phone_lbl.setStyleSheet("color: #f8fafc;")
+        elif state == "connecting":
+            self.phone_dot.setStyleSheet("background-color: #eab308; border-radius: 5px;")
+            self.phone_lbl.setText(f"Phone Link: Connecting ({msg})..." if msg else "Phone Link: Connecting...")
+            self.phone_lbl.setStyleSheet("color: #cbd5e1;")
+        else:
+            self.phone_dot.setStyleSheet("background-color: #ef4444; border-radius: 5px;")
+            self.phone_lbl.setText(f"Phone Link: Offline ({msg})" if msg else "Phone Link: Offline")
+            self.phone_lbl.setStyleSheet("color: #94a3b8;")
 
     def closeEvent(self, event):
         event.ignore()
