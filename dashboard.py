@@ -775,37 +775,38 @@ class StudyDashboard(QWidget):
         
         import threading
         def run_test():
-            import requests
-            fb_url = database.get_setting("firebase_url", "").strip()
-            fb_path = database.get_setting("firebase_path", "yaseen").strip()
-            
-            if not fb_url or not fb_path:
-                def update_empty():
-                    self.btn_test_fb.setEnabled(True)
-                    self.lbl_fb_test_status.setText("❌ EMPTY FIELDS")
-                    self.lbl_fb_test_status.setStyleSheet("color: #ffffff; background: #dc2626; padding: 4px 8px; border-radius: 4px; font-family: 'Outfit'; font-size: 10px; font-weight: bold;")
-                from PyQt6.QtCore import QTimer
-                QTimer.singleShot(0, update_empty)
-                return
-                
-            # Sanitize URL
-            if not fb_url.startswith("http"):
-                fb_url = "https://" + fb_url
-            if fb_url.endswith("/"):
-                fb_url = fb_url[:-1]
-                
-            test_url = f"{fb_url}/users/{fb_path}/test_signal.json"
-            
             success = False
             error_msg = "Error"
             try:
-                resp = requests.put(test_url, json=True, timeout=5)
-                if resp.status_code in [200, 204]:
-                    success = True
+                import requests
+                fb_url = database.get_setting("firebase_url", "")
+                fb_path = database.get_setting("firebase_path", "yaseen")
+                
+                # Safe type conversion & strip
+                fb_url = str(fb_url).strip() if fb_url else ""
+                fb_path = str(fb_path).strip() if fb_path else ""
+                
+                if not fb_url or not fb_path:
+                    error_msg = "EMPTY FIELDS"
                 else:
-                    error_msg = f"HTTP {resp.status_code}"
-            except Exception as e:
-                error_msg = "Offline/Timeout"
+                    # Sanitize URL
+                    if not fb_url.startswith("http"):
+                        fb_url = "https://" + fb_url
+                    if fb_url.endswith("/"):
+                        fb_url = fb_url[:-1]
+                        
+                    test_url = f"{fb_url}/users/{fb_path}/test_signal.json"
+                    
+                    try:
+                        resp = requests.put(test_url, json=True, timeout=5)
+                        if resp.status_code in [200, 204]:
+                            success = True
+                        else:
+                            error_msg = f"HTTP {resp.status_code}"
+                    except Exception as e:
+                        error_msg = "Offline/Timeout"
+            except Exception as outer_e:
+                error_msg = "Config Error"
                 
             def update_ui():
                 self.btn_test_fb.setEnabled(True)

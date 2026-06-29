@@ -423,12 +423,15 @@ class GazeReaderApp(QObject):
             firebase_url = database.get_setting("firebase_url", "")
             firebase_path = database.get_setting("firebase_path", "yaseen")
             
+            # Safe type conversion & strip
+            firebase_url = str(firebase_url).strip() if firebase_url else ""
+            firebase_path = str(firebase_path).strip() if firebase_path else ""
+            
             if not firebase_url or not firebase_path:
                 time.sleep(2)
                 continue
                 
             # Sanitize URL format
-            firebase_url = firebase_url.strip()
             if not firebase_url.startswith("http"):
                 firebase_url = "https://" + firebase_url
             if firebase_url.endswith("/"):
