@@ -253,11 +253,11 @@ class StudyDashboard(QWidget):
         
         # Scroll Area container
         from PyQt6.QtWidgets import QScrollArea
-        scroll = QScrollArea(pref_card)
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setStyleSheet("""
+        self.scroll = QScrollArea(pref_card)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.scroll.setStyleSheet("""
             QScrollArea {
                 border: none;
                 background: transparent;
@@ -479,8 +479,8 @@ class StudyDashboard(QWidget):
         delay_row.addWidget(self.delay_val_lbl)
         pref_layout.addLayout(delay_row)
         
-        scroll.setWidget(scroll_content)
-        card_main_layout.addWidget(scroll)
+        self.scroll.setWidget(scroll_content)
+        card_main_layout.addWidget(self.scroll)
         
         col1_layout.addWidget(pref_card)
         cols_layout.addLayout(col1_layout)
@@ -767,35 +767,38 @@ class StudyDashboard(QWidget):
         mode = "CLOUD" if index == 1 else "LOCAL"
         database.save_setting("phone_link_mode", mode)
         self.fb_container.setVisible(mode == "CLOUD")
+        if hasattr(self, "scroll") and self.scroll.widget():
+            self.scroll.widget().adjustSize()
 
     def test_firebase_connection(self):
+        # Read parameters directly from the UI inputs on the main thread
+        fb_url = self.txt_fb_url.text().strip()
+        fb_path = self.txt_fb_path.text().strip()
+
         self.lbl_fb_test_status.setText("TESTING...")
         self.lbl_fb_test_status.setStyleSheet("color: #ffffff; background: #475569; padding: 4px 8px; border-radius: 4px; font-family: 'Outfit'; font-size: 10px; font-weight: bold;")
         self.btn_test_fb.setEnabled(False)
         
         import threading
-        def run_test():
+        def run_test(url_to_test, path_to_test):
             success = False
             error_msg = "Error"
             try:
                 import requests
-                fb_url = database.get_setting("firebase_url", "")
-                fb_path = database.get_setting("firebase_path", "yaseen")
-                
                 # Safe type conversion & strip
-                fb_url = str(fb_url).strip() if fb_url else ""
-                fb_path = str(fb_path).strip() if fb_path else ""
+                url_to_test = str(url_to_test).strip() if url_to_test else ""
+                path_to_test = str(path_to_test).strip() if path_to_test else ""
                 
-                if not fb_url or not fb_path:
+                if not url_to_test or not path_to_test:
                     error_msg = "EMPTY FIELDS"
                 else:
                     # Sanitize URL
-                    if not fb_url.startswith("http"):
-                        fb_url = "https://" + fb_url
-                    if fb_url.endswith("/"):
-                        fb_url = fb_url[:-1]
+                    if not url_to_test.startswith("http"):
+                        url_to_test = "https://" + url_to_test
+                    if url_to_test.endswith("/"):
+                        url_to_test = url_to_test[:-1]
                         
-                    test_url = f"{fb_url}/users/{fb_path}/test_signal.json"
+                    test_url = f"{url_to_test}/users/{path_to_test}/test_signal.json"
                     
                     try:
                         resp = requests.put(test_url, json=True, timeout=5)
@@ -820,7 +823,7 @@ class StudyDashboard(QWidget):
             from PyQt6.QtCore import QTimer
             QTimer.singleShot(0, update_ui)
             
-        threading.Thread(target=run_test, daemon=True).start()
+        threading.Thread(target=run_test, args=(fb_url, fb_path), daemon=True).start()
 
     def update_camera_frame(self, frame):
         if not database.get_setting("preview_enabled", False):
