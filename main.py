@@ -3,6 +3,7 @@ import os
 import time
 import math
 import threading
+import requests
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PyQt6.QtCore import QObject, QTimer, Qt
@@ -85,9 +86,9 @@ class GazeReaderApp(QObject):
         self.server_thread.start()
         self.run_adb_reverse()
         
-        # 6. Start background UDP discovery responder server
-        self.udp_thread = threading.Thread(target=self.run_udp_discovery_server, daemon=True)
-        self.udp_thread.start()
+        # 6. Start background Firebase database stream listener thread
+        self.firebase_thread = threading.Thread(target=self.run_firebase_listener, daemon=True)
+        self.firebase_thread.start()
         
         # Bind dashboard actions
         self.dashboard.pomodoro_toggled.connect(self.handle_pomodoro_toggle)
@@ -402,23 +403,6 @@ class GazeReaderApp(QObject):
         except Exception as e:
             print("Failed to start phone sensor HTTP server:", e)
 
-    def run_udp_discovery_server(self):
-        import socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        try:
-            sock.bind(("", 5002))
-        except Exception as e:
-            print("Failed to start UDP discovery server:", e)
-            return
-
-        while True:
-            try:
-                data, addr = sock.recvfrom(1024)
-                if data == b"FOCUS_SENTRY_DISCOVER":
-                    sock.sendto(b"FOCUS_SENTRY_RESPONSE", addr)
-            except Exception:
-                time.sleep(1)
-
     def run_adb_reverse(self):
         try:
             adb_path = r"C:\Users\ThinkPad\AppData\Local\Android\Sdk\platform-tools\adb.exe"
@@ -427,6 +411,53 @@ class GazeReaderApp(QObject):
                 subprocess.run([adb_path, "reverse", "tcp:5001", "tcp:5001"], capture_output=True)
         except Exception as e:
             print("Failed to auto-configure ADB reverse:", e)
+
+    def run_firebase_listener(self):
+        import json
+        while True:
+            link_mode = database.get_setting("phone_link_mode", "LOCAL")
+            if link_mode != "CLOUD":
+                time.sleep(2)
+                continue
+                
+            firebase_url = database.get_setting("firebase_url", "")
+            firebase_path = database.get_setting("firebase_path", "yaseen")
+            
+            if not firebase_url or not firebase_path:
+                time.sleep(2)
+                continue
+                
+            # Sanitize URL format
+            firebase_url = firebase_url.strip()
+            if not firebase_url.startswith("http"):
+                firebase_url = "https://" + firebase_url
+            if firebase_url.endswith("/"):
+                firebase_url = firebase_url[:-1]
+                
+            stream_url = f"{firebase_url}/users/{firebase_path}/phone_active.json"
+            
+            try:
+                # Open SSE Stream with keep-alive
+                response = requests.get(stream_url, stream=True, headers={"Accept": "text/event-stream"}, timeout=60)
+                for line in response.iter_lines():
+                    if not line:
+                        continue
+                    decoded = line.decode('utf-8').strip()
+                    if decoded.startswith("data:"):
+                        payload = decoded[5:].strip()
+                        if payload == "null" or not payload:
+                            continue
+                        try:
+                            val = json.loads(payload)
+                            if val is True:
+                                # Trigger phone activity ping!
+                                print("[Firebase] Phone activity detected via Cloud stream!")
+                                phone_active_event.set()
+                        except Exception:
+                            pass
+            except Exception as e:
+                print("Firebase Cloud stream disconnected, retrying in 3s...", e)
+                time.sleep(3)
 
     def terminate_app(self):
         if self.server:

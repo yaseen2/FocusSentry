@@ -19,10 +19,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var etIp: EditText
     private lateinit var etPort: EditText
+    private lateinit var etFirebaseUrl: EditText
+    private lateinit var etFirebasePath: EditText
     private lateinit var sbSensitivity: SeekBar
     private lateinit var tvSensVal: TextView
     private lateinit var btnToggle: Button
-    private lateinit var btnAutoDetect: Button
+    private lateinit var rgMode: android.widget.RadioGroup
+    private lateinit var rbLocal: android.widget.RadioButton
+    private lateinit var rbCloud: android.widget.RadioButton
+    private lateinit var layoutLocal: android.widget.LinearLayout
+    private lateinit var layoutCloud: android.widget.LinearLayout
     private lateinit var prefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,17 +37,46 @@ class MainActivity : AppCompatActivity() {
 
         etIp = findViewById(R.id.etIp)
         etPort = findViewById(R.id.etPort)
+        etFirebaseUrl = findViewById(R.id.etFirebaseUrl)
+        etFirebasePath = findViewById(R.id.etFirebasePath)
         sbSensitivity = findViewById(R.id.sbSensitivity)
         tvSensVal = findViewById(R.id.tvSensVal)
         btnToggle = findViewById(R.id.btnToggle)
-        btnAutoDetect = findViewById(R.id.btnAutoDetect)
+        rgMode = findViewById(R.id.rgMode)
+        rbLocal = findViewById(R.id.rbLocal)
+        rbCloud = findViewById(R.id.rbCloud)
+        layoutLocal = findViewById(R.id.layoutLocal)
+        layoutCloud = findViewById(R.id.layoutCloud)
 
         prefs = getSharedPreferences("GazeReaderPrefs", Context.MODE_PRIVATE)
 
         // Load saved values
         etIp.setText(prefs.getString("laptop_ip", "192.168.1.100"))
         etPort.setText(prefs.getString("laptop_port", "5001"))
+        etFirebaseUrl.setText(prefs.getString("firebase_url", ""))
+        etFirebasePath.setText(prefs.getString("firebase_path", "yaseen"))
         
+        val mode = prefs.getString("link_mode", "LOCAL")
+        if (mode == "CLOUD") {
+            rbCloud.isChecked = true
+            layoutLocal.visibility = android.view.View.GONE
+            layoutCloud.visibility = android.view.View.VISIBLE
+        } else {
+            rbLocal.isChecked = true
+            layoutLocal.visibility = android.view.View.VISIBLE
+            layoutCloud.visibility = android.view.View.GONE
+        }
+
+        rgMode.setOnCheckedChangeListener { _, checkedId ->
+            if (checkedId == R.id.rbCloud) {
+                layoutLocal.visibility = android.view.View.GONE
+                layoutCloud.visibility = android.view.View.VISIBLE
+            } else {
+                layoutLocal.visibility = android.view.View.VISIBLE
+                layoutCloud.visibility = android.view.View.GONE
+            }
+        }
+
         val savedSensitivity = prefs.getFloat("sensitivity", 2.0f)
         sbSensitivity.progress = (savedSensitivity * 10).toInt()
         tvSensVal.text = String.format("%.1f m/s²", savedSensitivity)
@@ -55,65 +90,46 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        btnAutoDetect.setOnClickListener {
-            Toast.makeText(this, "Searching for FocusSentry on local network...", Toast.LENGTH_SHORT).show()
-            Thread {
-                var socket: DatagramSocket? = null
-                try {
-                    socket = DatagramSocket()
-                    socket.broadcast = true
-                    socket.soTimeout = 3000 // 3 seconds timeout
-                    
-                    val message = "FOCUS_SENTRY_DISCOVER".toByteArray()
-                    val address = InetAddress.getByName("255.255.255.255")
-                    val packet = DatagramPacket(message, message.size, address, 5002)
-                    socket.send(packet)
-                    
-                    val buffer = ByteArray(1024)
-                    val receivePacket = DatagramPacket(buffer, buffer.size)
-                    socket.receive(receivePacket)
-                    
-                    val response = String(receivePacket.data, 0, receivePacket.length)
-                    if (response == "FOCUS_SENTRY_RESPONSE") {
-                        val discoveredIp = receivePacket.address.hostAddress
-                        runOnUiThread {
-                            etIp.setText(discoveredIp)
-                            Toast.makeText(this, "FocusSentry found at: $discoveredIp", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    runOnUiThread {
-                        Toast.makeText(this, "Auto-detect failed. Make sure desktop app is running.", Toast.LENGTH_LONG).show()
-                    }
-                } finally {
-                    socket?.close()
-                }
-            }.start()
-        }
-
         btnToggle.setOnClickListener {
+            val isCloud = rbCloud.isChecked
+            val modeVal = if (isCloud) "CLOUD" else "LOCAL"
+
             val ip = etIp.text.toString().trim()
             val port = etPort.text.toString().trim()
+            val firebaseUrl = etFirebaseUrl.text.toString().trim()
+            val firebasePath = etFirebasePath.text.toString().trim()
             val sens = sbSensitivity.progress / 10.0f
 
-            if (ip.isEmpty() || port.isEmpty()) {
-                Toast.makeText(this, "Please enter IP and Port", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+            if (isCloud) {
+                if (firebaseUrl.isEmpty() || firebasePath.isEmpty()) {
+                    Toast.makeText(this, "Please enter Firebase Database URL and Path", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+            } else {
+                if (ip.isEmpty() || port.isEmpty()) {
+                    Toast.makeText(this, "Please enter IP and Port", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
             }
 
             // Save preferences
             prefs.edit().apply {
+                putString("link_mode", modeVal)
                 putString("laptop_ip", ip)
                 putString("laptop_port", port)
+                putString("firebase_url", firebaseUrl)
+                putString("firebase_path", firebasePath)
                 putFloat("sensitivity", sens)
                 apply()
             }
 
             val isRunning = SensorService.isRunning
             val serviceIntent = Intent(this, SensorService::class.java).apply {
+                putExtra("link_mode", modeVal)
                 putExtra("ip", ip)
                 putExtra("port", port)
+                putExtra("firebase_url", firebaseUrl)
+                putExtra("firebase_path", firebasePath)
                 putExtra("sensitivity", sens)
             }
 

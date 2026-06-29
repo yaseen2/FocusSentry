@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, 
-    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider
+    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider, QComboBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QImage, QPixmap, QColor
@@ -261,6 +261,80 @@ class StudyDashboard(QWidget):
         chk_layout.addWidget(self.chk_chime)
         chk_layout.addWidget(self.chk_preview)
         pref_layout.addLayout(chk_layout)
+
+        # Phone Link Mode selection row
+        link_row = QHBoxLayout()
+        link_lbl = QLabel("Phone Link Mode:", pref_card)
+        link_lbl.setFont(QFont("Inter", 9))
+        self.cmb_link_mode = QComboBox(pref_card)
+        self.cmb_link_mode.addItems(["Local Sockets", "Firebase Cloud"])
+        current_mode = database.get_setting("phone_link_mode", "LOCAL")
+        self.cmb_link_mode.setCurrentIndex(1 if current_mode == "CLOUD" else 0)
+        self.cmb_link_mode.setStyleSheet("""
+            QComboBox {
+                background: rgba(255,255,255,0.02);
+                border: 1px solid rgba(255,255,255,0.04);
+                border-radius: 4px;
+                color: #f8fafc;
+                padding: 4px 8px;
+                min-width: 140px;
+            }
+        """)
+        self.cmb_link_mode.currentIndexChanged.connect(self.update_link_mode)
+        link_row.addWidget(link_lbl)
+        link_row.addWidget(self.cmb_link_mode)
+        pref_layout.addLayout(link_row)
+
+        # Firebase configuration fields (Container widget to toggle visibility easily)
+        self.fb_container = QWidget(pref_card)
+        fb_lay = QVBoxLayout(self.fb_container)
+        fb_lay.setContentsMargins(0, 0, 0, 0)
+        fb_lay.setSpacing(6)
+
+        # Firebase URL
+        fb_url_row = QHBoxLayout()
+        fb_url_lbl = QLabel("Firebase URL:", self.fb_container)
+        fb_url_lbl.setFont(QFont("Inter", 9))
+        fb_url_lbl.setFixedWidth(90)
+        self.txt_fb_url = QLineEdit(self.fb_container)
+        self.txt_fb_url.setText(database.get_setting("firebase_url", ""))
+        self.txt_fb_url.setStyleSheet("""
+            QLineEdit {
+                background: rgba(255,255,255,0.02);
+                border: 1px solid rgba(255,255,255,0.04);
+                border-radius: 4px;
+                color: #f8fafc;
+                padding: 4px;
+            }
+        """)
+        self.txt_fb_url.textChanged.connect(lambda text: database.save_setting("firebase_url", text))
+        fb_url_row.addWidget(fb_url_lbl)
+        fb_url_row.addWidget(self.txt_fb_url)
+        fb_lay.addLayout(fb_url_row)
+
+        # Firebase User Path
+        fb_path_row = QHBoxLayout()
+        fb_path_lbl = QLabel("User Path:", self.fb_container)
+        fb_path_lbl.setFont(QFont("Inter", 9))
+        fb_path_lbl.setFixedWidth(90)
+        self.txt_fb_path = QLineEdit(self.fb_container)
+        self.txt_fb_path.setText(database.get_setting("firebase_path", "yaseen"))
+        self.txt_fb_path.setStyleSheet("""
+            QLineEdit {
+                background: rgba(255,255,255,0.02);
+                border: 1px solid rgba(255,255,255,0.04);
+                border-radius: 4px;
+                color: #f8fafc;
+                padding: 4px;
+            }
+        """)
+        self.txt_fb_path.textChanged.connect(lambda text: database.save_setting("firebase_path", text))
+        fb_path_row.addWidget(fb_path_lbl)
+        fb_path_row.addWidget(self.txt_fb_path)
+        fb_lay.addLayout(fb_path_row)
+
+        pref_layout.addWidget(self.fb_container)
+        self.fb_container.setVisible(current_mode == "CLOUD")
 
         # Yaw Slider Row
         yaw_row = QHBoxLayout()
@@ -610,6 +684,11 @@ class StudyDashboard(QWidget):
         if not enabled:
             self.video_lbl.clear()
             self.video_lbl.setText("Camera Standby (Preview disabled)")
+
+    def update_link_mode(self, index):
+        mode = "CLOUD" if index == 1 else "LOCAL"
+        database.save_setting("phone_link_mode", mode)
+        self.fb_container.setVisible(mode == "CLOUD")
 
     def update_camera_frame(self, frame):
         if not database.get_setting("preview_enabled", False):
