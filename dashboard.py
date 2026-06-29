@@ -24,7 +24,7 @@ class StudyDashboard(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(940, 740)
+        self.setFixedSize(920, 640)
         self.pomodoro_active = False
         self.study_time_left = 50 * 60
         self.pomodoro_phase = "FOCUS"
@@ -240,25 +240,60 @@ class StudyDashboard(QWidget):
         # Preferences Card
         pref_card = QFrame(self)
         pref_card.setProperty("class", "card")
-        pref_layout = QVBoxLayout(pref_card)
-        pref_layout.setContentsMargins(16, 16, 16, 16)
-        pref_layout.setSpacing(10)
-
+        
+        # Pinned layouts: Title remains fixed at the top of the card
+        card_main_layout = QVBoxLayout(pref_card)
+        card_main_layout.setContentsMargins(14, 14, 14, 14)
+        card_main_layout.setSpacing(6)
+        
         pref_title = QLabel("⚙️ SYSTEM SETTINGS & SENSITIVITY", pref_card)
         pref_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
-        pref_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
-        pref_layout.addWidget(pref_title)
+        pref_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;")
+        card_main_layout.addWidget(pref_title)
+        
+        # Scroll Area container
+        from PyQt6.QtWidgets import QScrollArea
+        scroll = QScrollArea(pref_card)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: rgba(255,255,255,0.01);
+                width: 6px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255,255,255,0.1);
+                border-radius: 3px;
+                min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #6366f1;
+            }
+        """)
+        
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background: transparent;")
+        pref_layout = QVBoxLayout(scroll_content)
+        pref_layout.setContentsMargins(0, 4, 8, 4)
+        pref_layout.setSpacing(12)
 
-        # Startup and chimes (stacked vertically for clean breathing room)
-        self.chk_startup = QCheckBox("Startup boot", pref_card)
+        # Startup and chimes (child of scroll_content)
+        self.chk_startup = QCheckBox("Startup boot", scroll_content)
         self.chk_startup.setChecked(database.get_setting("startup_enabled", False))
         self.chk_startup.stateChanged.connect(self.toggle_startup_preference)
         
-        self.chk_chime = QCheckBox("Warning chimes", pref_card)
+        self.chk_chime = QCheckBox("Warning chimes", scroll_content)
         self.chk_chime.setChecked(database.get_setting("chime_enabled", True))
         self.chk_chime.stateChanged.connect(lambda state: database.save_setting("chime_enabled", state == 2))
         
-        self.chk_preview = QCheckBox("Video preview feed", pref_card)
+        self.chk_preview = QCheckBox("Video preview feed", scroll_content)
         self.chk_preview.setChecked(database.get_setting("preview_enabled", False))
         self.chk_preview.stateChanged.connect(self.toggle_video_preview)
 
@@ -268,9 +303,9 @@ class StudyDashboard(QWidget):
 
         # Phone Link Mode selection row
         link_row = QHBoxLayout()
-        link_lbl = QLabel("Phone Link Mode:", pref_card)
+        link_lbl = QLabel("Phone Link Mode:", scroll_content)
         link_lbl.setFont(QFont("Inter", 9))
-        self.cmb_link_mode = QComboBox(pref_card)
+        self.cmb_link_mode = QComboBox(scroll_content)
         self.cmb_link_mode.addItems(["Local Sockets", "Firebase Cloud"])
         current_mode = database.get_setting("phone_link_mode", "LOCAL")
         self.cmb_link_mode.setCurrentIndex(1 if current_mode == "CLOUD" else 0)
@@ -290,7 +325,7 @@ class StudyDashboard(QWidget):
         pref_layout.addLayout(link_row)
 
         # Firebase configuration fields (Container widget to toggle visibility easily)
-        self.fb_container = QWidget(pref_card)
+        self.fb_container = QWidget(scroll_content)
         fb_lay = QVBoxLayout(self.fb_container)
         fb_lay.setContentsMargins(0, 10, 0, 10)
         fb_lay.setSpacing(10)
@@ -378,12 +413,12 @@ class StudyDashboard(QWidget):
 
         # Yaw Slider Row
         yaw_row = QHBoxLayout()
-        yaw_lbl = QLabel("Yaw Limit (Left/Right look):", pref_card)
+        yaw_lbl = QLabel("Yaw Limit (Left/Right look):", scroll_content)
         yaw_lbl.setFont(QFont("Inter", 9))
-        self.yaw_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
+        self.yaw_slider = QSlider(Qt.Orientation.Horizontal, scroll_content)
         self.yaw_slider.setRange(5, 100)
         self.yaw_slider.setValue(int(database.get_setting("yaw_threshold", 18)))
-        self.yaw_val_lbl = QLabel(f"{self.yaw_slider.value()}°", pref_card)
+        self.yaw_val_lbl = QLabel(f"{self.yaw_slider.value()}°", scroll_content)
         self.yaw_val_lbl.setFixedWidth(28)
         self.yaw_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.yaw_slider.valueChanged.connect(self.update_yaw_threshold)
@@ -395,12 +430,12 @@ class StudyDashboard(QWidget):
 
         # Pitch Slider Row
         pitch_row = QHBoxLayout()
-        pitch_lbl = QLabel("Pitch Limit (Up/Down look):", pref_card)
+        pitch_lbl = QLabel("Pitch Limit (Up/Down look):", scroll_content)
         pitch_lbl.setFont(QFont("Inter", 9))
-        self.pitch_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
+        self.pitch_slider = QSlider(Qt.Orientation.Horizontal, scroll_content)
         self.pitch_slider.setRange(5, 100)
         self.pitch_slider.setValue(int(database.get_setting("pitch_threshold", 14)))
-        self.pitch_val_lbl = QLabel(f"{self.pitch_slider.value()}°", pref_card)
+        self.pitch_val_lbl = QLabel(f"{self.pitch_slider.value()}°", scroll_content)
         self.pitch_val_lbl.setFixedWidth(28)
         self.pitch_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.pitch_slider.valueChanged.connect(self.update_pitch_threshold)
@@ -412,12 +447,12 @@ class StudyDashboard(QWidget):
 
         # Eye Roll Slider Row
         eye_row = QHBoxLayout()
-        eye_lbl = QLabel("Eye Roll Limit (Glance aside):", pref_card)
+        eye_lbl = QLabel("Eye Roll Limit (Glance aside):", scroll_content)
         eye_lbl.setFont(QFont("Inter", 9))
-        self.eye_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
+        self.eye_slider = QSlider(Qt.Orientation.Horizontal, scroll_content)
         self.eye_slider.setRange(20, 45)
         self.eye_slider.setValue(int(database.get_setting("eye_roll_threshold", 35)))
-        self.eye_val_lbl = QLabel(f"{self.eye_slider.value()}%", pref_card)
+        self.eye_val_lbl = QLabel(f"{self.eye_slider.value()}%", scroll_content)
         self.eye_val_lbl.setFixedWidth(28)
         self.eye_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.eye_slider.valueChanged.connect(self.update_eye_threshold)
@@ -429,12 +464,12 @@ class StudyDashboard(QWidget):
 
         # Delay Slider Row
         delay_row = QHBoxLayout()
-        delay_lbl = QLabel("Warning Alert Delay:", pref_card)
+        delay_lbl = QLabel("Warning Alert Delay:", scroll_content)
         delay_lbl.setFont(QFont("Inter", 9))
-        self.delay_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
+        self.delay_slider = QSlider(Qt.Orientation.Horizontal, scroll_content)
         self.delay_slider.setRange(1, 10)
         self.delay_slider.setValue(int(database.get_setting("warning_delay", 4)))
-        self.delay_val_lbl = QLabel(f"{self.delay_slider.value()}s", pref_card)
+        self.delay_val_lbl = QLabel(f"{self.delay_slider.value()}s", scroll_content)
         self.delay_val_lbl.setFixedWidth(28)
         self.delay_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.delay_slider.valueChanged.connect(self.update_warning_delay)
@@ -443,6 +478,9 @@ class StudyDashboard(QWidget):
         delay_row.addWidget(self.delay_slider)
         delay_row.addWidget(self.delay_val_lbl)
         pref_layout.addLayout(delay_row)
+        
+        scroll.setWidget(scroll_content)
+        card_main_layout.addWidget(scroll)
         
         col1_layout.addWidget(pref_card)
         cols_layout.addLayout(col1_layout)
