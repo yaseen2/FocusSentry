@@ -24,13 +24,13 @@ class StudyDashboard(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setFixedSize(940, 740)
         self.pomodoro_active = False
         self.study_time_left = 50 * 60
         self.pomodoro_phase = "FOCUS"
         self.blacklist_items = []
         
         self.setWindowTitle("GazeReader - Study Control Panel")
-        self.setFixedSize(920, 640)
         self.setStyleSheet("""
             QWidget {
                 background-color: #0b0f19;
@@ -292,8 +292,8 @@ class StudyDashboard(QWidget):
         # Firebase configuration fields (Container widget to toggle visibility easily)
         self.fb_container = QWidget(pref_card)
         fb_lay = QVBoxLayout(self.fb_container)
-        fb_lay.setContentsMargins(0, 0, 0, 0)
-        fb_lay.setSpacing(6)
+        fb_lay.setContentsMargins(0, 10, 0, 10)
+        fb_lay.setSpacing(10)
 
         # Firebase URL (Label above Input for maximum space)
         fb_url_lbl = QLabel("Firebase Database URL:", self.fb_container)
