@@ -452,8 +452,14 @@ class GazeReaderApp(QObject):
                             continue
                         try:
                             val = json.loads(payload)
-                            if val is True:
-                                # Trigger phone activity ping!
+                            actual_val = None
+                            if isinstance(val, dict):
+                                if "data" in val:
+                                    actual_val = val["data"]
+                            else:
+                                actual_val = val
+                                
+                            if actual_val is True:
                                 print("[Firebase] Phone activity detected via Cloud stream!")
                                 phone_active_event.set()
                         except Exception:
