@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, 
-    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider, QComboBox
+    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QImage, QPixmap, QColor
@@ -24,13 +24,13 @@ class StudyDashboard(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(920, 640)
         self.pomodoro_active = False
         self.study_time_left = 50 * 60
         self.pomodoro_phase = "FOCUS"
         self.blacklist_items = []
         
         self.setWindowTitle("GazeReader - Study Control Panel")
+        self.setFixedSize(920, 640)
         self.setStyleSheet("""
             QWidget {
                 background-color: #0b0f19;
@@ -187,7 +187,7 @@ class StudyDashboard(QWidget):
         self.video_lbl.setStyleSheet("color: #475569; background-color: #020617; border-radius: 8px;")
         status_layout.addWidget(self.video_lbl)
 
-        # Status indicators (Row 1)
+        # Status indicators
         status_row = QHBoxLayout()
         status_row.setSpacing(6)
         self.dot = QWidget(self.status_card)
@@ -201,13 +201,11 @@ class StudyDashboard(QWidget):
         status_row.addWidget(self.dot)
         status_row.addWidget(self.status_lbl)
         status_row.addStretch()
-        status_layout.addLayout(status_row)
         
-        # Center calibration button and value label (Row 2)
-        calib_row = QHBoxLayout()
+        # Center calibration button
         self.btn_set_center = QPushButton("🎯 Set Center", self.status_card)
         self.btn_set_center.setObjectName("btn_set_center")
-        self.btn_set_center.setFixedSize(95, 28)
+        self.btn_set_center.setFixedSize(85, 26)
         self.btn_set_center.setStyleSheet("""
             QPushButton#btn_set_center {
                 background-color: #1e293b;
@@ -215,7 +213,6 @@ class StudyDashboard(QWidget):
                 border: 1px solid rgba(99, 102, 241, 0.3);
                 border-radius: 6px;
                 padding: 2px 6px;
-                font-family: 'Inter';
                 font-size: 11px;
                 font-weight: bold;
             }
@@ -225,50 +222,29 @@ class StudyDashboard(QWidget):
             }
         """)
         self.btn_set_center.clicked.connect(self.set_center_requested.emit)
+        status_row.addWidget(self.btn_set_center)
         
         self.lbl_calib_state = QLabel("Center: Y:0°, P:0°", self.status_card)
         self.lbl_calib_state.setFont(QFont("Inter", 9))
         self.lbl_calib_state.setStyleSheet("color: #64748b;")
-        
-        calib_row.addWidget(self.btn_set_center)
-        calib_row.addSpacing(10)
-        calib_row.addWidget(self.lbl_calib_state)
-        calib_row.addStretch()
-        status_layout.addLayout(calib_row)
-        
-        # Phone Link Status (Row 3)
-        phone_row = QHBoxLayout()
-        phone_row.setSpacing(6)
-        
-        self.phone_dot = QWidget(self.status_card)
-        self.phone_dot.setFixedSize(10, 10)
-        self.phone_dot.setStyleSheet("background-color: #64748b; border-radius: 5px;")
-        
-        self.phone_lbl = QLabel("Phone Link: Offline", self.status_card)
-        self.phone_lbl.setFont(QFont("Inter", 10, QFont.Weight.Medium))
-        self.phone_lbl.setStyleSheet("color: #94a3b8;")
-        
-        phone_row.addWidget(self.phone_dot)
-        phone_row.addWidget(self.phone_lbl)
-        phone_row.addStretch()
-        status_layout.addLayout(phone_row)
-        
+        status_row.addWidget(self.lbl_calib_state)
+        status_layout.addLayout(status_row)
         col1_layout.addWidget(self.status_card)
 
         # Preferences Card
         pref_card = QFrame(self)
         pref_card.setProperty("class", "card")
         pref_layout = QVBoxLayout(pref_card)
-        pref_layout.setContentsMargins(12, 10, 12, 10)
-        pref_layout.setSpacing(6)
-        
+        pref_layout.setContentsMargins(16, 16, 16, 16)
+        pref_layout.setSpacing(10)
+
         pref_title = QLabel("⚙️ SYSTEM SETTINGS & SENSITIVITY", pref_card)
         pref_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
-        pref_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;")
+        pref_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
         pref_layout.addWidget(pref_title)
-        
-        # Checkboxes row 1 (Startup & Chimes side-by-side)
-        cb_row1 = QHBoxLayout()
+
+        # Startup and chimes
+        chk_layout = QHBoxLayout()
         self.chk_startup = QCheckBox("Startup boot", pref_card)
         self.chk_startup.setChecked(database.get_setting("startup_enabled", False))
         self.chk_startup.stateChanged.connect(self.toggle_startup_preference)
@@ -277,143 +253,27 @@ class StudyDashboard(QWidget):
         self.chk_chime.setChecked(database.get_setting("chime_enabled", True))
         self.chk_chime.stateChanged.connect(lambda state: database.save_setting("chime_enabled", state == 2))
         
-        cb_row1.addWidget(self.chk_startup)
-        cb_row1.addWidget(self.chk_chime)
-        pref_layout.addLayout(cb_row1)
-        
-        # Checkboxes row 2 (Preview & Link Mode side-by-side)
-        cb_row2 = QHBoxLayout()
         self.chk_preview = QCheckBox("Video preview", pref_card)
         self.chk_preview.setChecked(database.get_setting("preview_enabled", False))
         self.chk_preview.stateChanged.connect(self.toggle_video_preview)
-        
-        self.cmb_link_mode = QComboBox(pref_card)
-        self.cmb_link_mode.addItems(["Local Sockets", "Firebase Cloud"])
-        current_mode = database.get_setting("phone_link_mode", "LOCAL")
-        self.cmb_link_mode.setCurrentIndex(1 if current_mode == "CLOUD" else 0)
-        self.cmb_link_mode.setStyleSheet("""
-            QComboBox {
-                background: rgba(255,255,255,0.02);
-                border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 4px;
-                color: #f8fafc;
-                padding: 2px 6px;
-                font-size: 11px;
-                min-width: 110px;
-            }
-        """)
-        self.cmb_link_mode.currentIndexChanged.connect(self.update_link_mode)
-        
-        cb_row2.addWidget(self.chk_preview)
-        cb_row2.addWidget(self.cmb_link_mode)
-        pref_layout.addLayout(cb_row2)
 
-        # Firebase configuration fields (Container widget to toggle visibility easily)
-        self.fb_container = QWidget(pref_card)
-        fb_lay = QVBoxLayout(self.fb_container)
-        fb_lay.setContentsMargins(0, 4, 0, 4)
-        fb_lay.setSpacing(6)
-
-        # Firebase URL (Label above Input)
-        fb_url_lbl = QLabel("Firebase Database URL:", self.fb_container)
-        fb_url_lbl.setFont(QFont("Outfit", 7, QFont.Weight.Bold))
-        fb_url_lbl.setStyleSheet("color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;")
-        self.txt_fb_url = QLineEdit(self.fb_container)
-        self.txt_fb_url.setPlaceholderText("https://database-name.firebaseio.com")
-        self.txt_fb_url.setText(database.get_setting("firebase_url", ""))
-        self.txt_fb_url.setStyleSheet("""
-            QLineEdit {
-                background: rgba(255,255,255,0.02);
-                border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 4px;
-                color: #f8fafc;
-                padding: 4px 6px;
-                font-size: 11px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #6366f1;
-            }
-        """)
-        self.txt_fb_url.textChanged.connect(lambda text: database.save_setting("firebase_url", text))
-        fb_lay.addWidget(fb_url_lbl)
-        fb_lay.addWidget(self.txt_fb_url)
-
-        # Firebase User Path & Test Button (Side-by-side row!)
-        fb_row2 = QHBoxLayout()
-        
-        path_col = QVBoxLayout()
-        fb_path_lbl = QLabel("User Path / ID:", self.fb_container)
-        fb_path_lbl.setFont(QFont("Outfit", 7, QFont.Weight.Bold))
-        fb_path_lbl.setStyleSheet("color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;")
-        self.txt_fb_path = QLineEdit(self.fb_container)
-        self.txt_fb_path.setPlaceholderText("e.g. yaseen")
-        self.txt_fb_path.setText(database.get_setting("firebase_path", "yaseen"))
-        self.txt_fb_path.setStyleSheet("""
-            QLineEdit {
-                background: rgba(255,255,255,0.02);
-                border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 4px;
-                color: #f8fafc;
-                padding: 4px 6px;
-                font-size: 11px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #6366f1;
-            }
-        """)
-        self.txt_fb_path.textChanged.connect(lambda text: database.save_setting("firebase_path", text))
-        path_col.addWidget(fb_path_lbl)
-        path_col.addWidget(self.txt_fb_path)
-        fb_row2.addLayout(path_col, 2)
-
-        test_col = QVBoxLayout()
-        test_col.setAlignment(Qt.AlignmentFlag.AlignBottom)
-        
-        test_btn_status_row = QHBoxLayout()
-        self.btn_test_fb = QPushButton("🧪 Test Connection", self.fb_container)
-        self.btn_test_fb.setFixedHeight(22)
-        self.btn_test_fb.setStyleSheet("""
-            QPushButton {
-                background: #1e293b;
-                color: #e2e8f0;
-                border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 4px;
-                font-family: 'Inter';
-                font-size: 10px;
-                font-weight: bold;
-                padding: 0px 8px;
-            }
-            QPushButton:hover {
-                background: #334155;
-            }
-        """)
-        self.btn_test_fb.clicked.connect(self.test_firebase_connection)
-        
-        self.lbl_fb_test_status = QLabel("", self.fb_container)
-        self.lbl_fb_test_status.setFont(QFont("Outfit", 7, QFont.Weight.Bold))
-        self.lbl_fb_test_status.setStyleSheet("padding: 2px 6px; border-radius: 4px;")
-        
-        test_btn_status_row.addWidget(self.btn_test_fb)
-        test_btn_status_row.addWidget(self.lbl_fb_test_status)
-        test_col.addLayout(test_btn_status_row)
-        fb_row2.addLayout(test_col, 3)
-        
-        fb_lay.addLayout(fb_row2)
-        pref_layout.addWidget(self.fb_container)
-        self.fb_container.setVisible(current_mode == "CLOUD")
+        chk_layout.addWidget(self.chk_startup)
+        chk_layout.addWidget(self.chk_chime)
+        chk_layout.addWidget(self.chk_preview)
+        pref_layout.addLayout(chk_layout)
 
         # Yaw Slider Row
         yaw_row = QHBoxLayout()
-        yaw_lbl = QLabel("Yaw Limit:", pref_card)
-        yaw_lbl.setFont(QFont("Inter", 8))
+        yaw_lbl = QLabel("Yaw Limit (Left/Right look):", pref_card)
+        yaw_lbl.setFont(QFont("Inter", 9))
         self.yaw_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
         self.yaw_slider.setRange(5, 100)
         self.yaw_slider.setValue(int(database.get_setting("yaw_threshold", 18)))
         self.yaw_val_lbl = QLabel(f"{self.yaw_slider.value()}°", pref_card)
-        self.yaw_val_lbl.setFixedWidth(24)
-        self.yaw_val_lbl.setFont(QFont("Inter", 8))
+        self.yaw_val_lbl.setFixedWidth(28)
         self.yaw_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.yaw_slider.valueChanged.connect(self.update_yaw_threshold)
+        
         yaw_row.addWidget(yaw_lbl)
         yaw_row.addWidget(self.yaw_slider)
         yaw_row.addWidget(self.yaw_val_lbl)
@@ -421,16 +281,16 @@ class StudyDashboard(QWidget):
 
         # Pitch Slider Row
         pitch_row = QHBoxLayout()
-        pitch_lbl = QLabel("Pitch Limit:", pref_card)
-        pitch_lbl.setFont(QFont("Inter", 8))
+        pitch_lbl = QLabel("Pitch Limit (Up/Down look):", pref_card)
+        pitch_lbl.setFont(QFont("Inter", 9))
         self.pitch_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
         self.pitch_slider.setRange(5, 100)
         self.pitch_slider.setValue(int(database.get_setting("pitch_threshold", 14)))
         self.pitch_val_lbl = QLabel(f"{self.pitch_slider.value()}°", pref_card)
-        self.pitch_val_lbl.setFixedWidth(24)
-        self.pitch_val_lbl.setFont(QFont("Inter", 8))
+        self.pitch_val_lbl.setFixedWidth(28)
         self.pitch_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.pitch_slider.valueChanged.connect(self.update_pitch_threshold)
+        
         pitch_row.addWidget(pitch_lbl)
         pitch_row.addWidget(self.pitch_slider)
         pitch_row.addWidget(self.pitch_val_lbl)
@@ -438,16 +298,16 @@ class StudyDashboard(QWidget):
 
         # Eye Roll Slider Row
         eye_row = QHBoxLayout()
-        eye_lbl = QLabel("Eye Roll:", pref_card)
-        eye_lbl.setFont(QFont("Inter", 8))
+        eye_lbl = QLabel("Eye Roll Limit (Glance aside):", pref_card)
+        eye_lbl.setFont(QFont("Inter", 9))
         self.eye_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
         self.eye_slider.setRange(20, 45)
         self.eye_slider.setValue(int(database.get_setting("eye_roll_threshold", 35)))
         self.eye_val_lbl = QLabel(f"{self.eye_slider.value()}%", pref_card)
-        self.eye_val_lbl.setFixedWidth(24)
-        self.eye_val_lbl.setFont(QFont("Inter", 8))
+        self.eye_val_lbl.setFixedWidth(28)
         self.eye_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.eye_slider.valueChanged.connect(self.update_eye_threshold)
+        
         eye_row.addWidget(eye_lbl)
         eye_row.addWidget(self.eye_slider)
         eye_row.addWidget(self.eye_val_lbl)
@@ -455,16 +315,16 @@ class StudyDashboard(QWidget):
 
         # Delay Slider Row
         delay_row = QHBoxLayout()
-        delay_lbl = QLabel("Alert Delay:", pref_card)
-        delay_lbl.setFont(QFont("Inter", 8))
+        delay_lbl = QLabel("Warning Alert Delay:", pref_card)
+        delay_lbl.setFont(QFont("Inter", 9))
         self.delay_slider = QSlider(Qt.Orientation.Horizontal, pref_card)
         self.delay_slider.setRange(1, 10)
         self.delay_slider.setValue(int(database.get_setting("warning_delay", 4)))
         self.delay_val_lbl = QLabel(f"{self.delay_slider.value()}s", pref_card)
-        self.delay_val_lbl.setFixedWidth(24)
-        self.delay_val_lbl.setFont(QFont("Inter", 8))
+        self.delay_val_lbl.setFixedWidth(28)
         self.delay_val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.delay_slider.valueChanged.connect(self.update_warning_delay)
+        
         delay_row.addWidget(delay_lbl)
         delay_row.addWidget(self.delay_slider)
         delay_row.addWidget(self.delay_val_lbl)
@@ -751,66 +611,6 @@ class StudyDashboard(QWidget):
             self.video_lbl.clear()
             self.video_lbl.setText("Camera Standby (Preview disabled)")
 
-    def update_link_mode(self, index):
-        mode = "CLOUD" if index == 1 else "LOCAL"
-        database.save_setting("phone_link_mode", mode)
-        self.fb_container.setVisible(mode == "CLOUD")
-
-    def test_firebase_connection(self):
-        # Read parameters directly from the UI inputs on the main thread
-        fb_url = self.txt_fb_url.text().strip()
-        fb_path = self.txt_fb_path.text().strip()
-
-        self.lbl_fb_test_status.setText("TESTING...")
-        self.lbl_fb_test_status.setStyleSheet("color: #ffffff; background: #475569; padding: 4px 8px; border-radius: 4px; font-family: 'Outfit'; font-size: 10px; font-weight: bold;")
-        self.btn_test_fb.setEnabled(False)
-        
-        import threading
-        def run_test(url_to_test, path_to_test):
-            success = False
-            error_msg = "Error"
-            try:
-                import requests
-                # Safe type conversion & strip
-                url_to_test = str(url_to_test).strip() if url_to_test else ""
-                path_to_test = str(path_to_test).strip() if path_to_test else ""
-                
-                if not url_to_test or not path_to_test:
-                    error_msg = "EMPTY FIELDS"
-                else:
-                    # Sanitize URL
-                    if not url_to_test.startswith("http"):
-                        url_to_test = "https://" + url_to_test
-                    if url_to_test.endswith("/"):
-                        url_to_test = url_to_test[:-1]
-                        
-                    test_url = f"{url_to_test}/users/{path_to_test}/test_signal.json"
-                    
-                    try:
-                        resp = requests.put(test_url, json=True, timeout=5)
-                        if resp.status_code in [200, 204]:
-                            success = True
-                        else:
-                            error_msg = f"HTTP {resp.status_code}"
-                    except Exception as e:
-                        error_msg = "Offline/Timeout"
-            except Exception as outer_e:
-                error_msg = "Config Error"
-                
-            def update_ui():
-                self.btn_test_fb.setEnabled(True)
-                if success:
-                    self.lbl_fb_test_status.setText("✅ SUCCESS")
-                    self.lbl_fb_test_status.setStyleSheet("color: #ffffff; background: #16a34a; padding: 4px 8px; border-radius: 4px; font-family: 'Outfit'; font-size: 10px; font-weight: bold;")
-                else:
-                    self.lbl_fb_test_status.setText(f"❌ FAILED ({error_msg})")
-                    self.lbl_fb_test_status.setStyleSheet("color: #ffffff; background: #dc2626; padding: 4px 8px; border-radius: 4px; font-family: 'Outfit'; font-size: 10px; font-weight: bold;")
-            
-            from PyQt6.QtCore import QTimer
-            QTimer.singleShot(0, update_ui)
-            
-        threading.Thread(target=run_test, args=(fb_url, fb_path), daemon=True).start()
-
     def update_camera_frame(self, frame):
         if not database.get_setting("preview_enabled", False):
             return
@@ -1041,20 +841,6 @@ class StudyDashboard(QWidget):
         elif colorClass == "red": color_hex = "#f43f5e"
         
         self.dot.setStyleSheet(f"background-color: {color_hex}; border-radius: 5px;")
-
-    def set_phone_status(self, state, msg=""):
-        if state == "connected":
-            self.phone_dot.setStyleSheet("background-color: #10b981; border-radius: 5px;")
-            self.phone_lbl.setText(f"Phone Link: Connected ({msg})" if msg else "Phone Link: Connected")
-            self.phone_lbl.setStyleSheet("color: #f8fafc;")
-        elif state == "connecting":
-            self.phone_dot.setStyleSheet("background-color: #eab308; border-radius: 5px;")
-            self.phone_lbl.setText(f"Phone Link: Connecting ({msg})..." if msg else "Phone Link: Connecting...")
-            self.phone_lbl.setStyleSheet("color: #cbd5e1;")
-        else:
-            self.phone_dot.setStyleSheet("background-color: #ef4444; border-radius: 5px;")
-            self.phone_lbl.setText(f"Phone Link: Offline ({msg})" if msg else "Phone Link: Offline")
-            self.phone_lbl.setStyleSheet("color: #94a3b8;")
 
     def closeEvent(self, event):
         event.ignore()

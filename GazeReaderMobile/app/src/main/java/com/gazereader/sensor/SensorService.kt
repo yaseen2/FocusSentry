@@ -31,11 +31,8 @@ class SensorService : Service(), SensorEventListener {
     private var lastZ = 0f
     private var hasLastValues = false
 
-    private var linkMode = "LOCAL"
     private var ip = ""
     private var port = ""
-    private var firebaseUrl = ""
-    private var firebasePath = ""
     private var sensitivity = 2.0f
     private var lastPingTime = 0L
 
@@ -56,11 +53,8 @@ class SensorService : Service(), SensorEventListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        linkMode = intent?.getStringExtra("link_mode") ?: "LOCAL"
         ip = intent?.getStringExtra("ip") ?: "192.168.1.100"
         port = intent?.getStringExtra("port") ?: "5001"
-        firebaseUrl = intent?.getStringExtra("firebase_url") ?: ""
-        firebasePath = intent?.getStringExtra("firebase_path") ?: "yaseen"
         sensitivity = intent?.getFloatExtra("sensitivity", 2.0f) ?: 2.0f
 
         createNotificationChannel()
@@ -107,47 +101,19 @@ class SensorService : Service(), SensorEventListener {
 
     private fun sendPingToLaptop() {
         serviceScope.launch {
-            if (linkMode == "CLOUD") {
-                try {
-                    // 1. Write true (Phone picked up)
-                    val url = URL("$firebaseUrl/users/$firebasePath/phone_active.json")
-                    var conn = url.openConnection() as HttpURLConnection
-                    conn.connectTimeout = 1500
-                    conn.readTimeout = 1500
-                    conn.requestMethod = "PUT"
-                    conn.doOutput = true
-                    conn.setRequestProperty("Content-Type", "application/json")
-                    conn.outputStream.write("true".toByteArray())
-                    conn.responseCode // trigger connection
-                    conn.disconnect()
-
-                    // 2. Wait 2 seconds, then reset to false
-                    kotlinx.coroutines.delay(2000)
-                    conn = url.openConnection() as HttpURLConnection
-                    conn.connectTimeout = 1500
-                    conn.readTimeout = 1500
-                    conn.requestMethod = "PUT"
-                    conn.doOutput = true
-                    conn.setRequestProperty("Content-Type", "application/json")
-                    conn.outputStream.write("false".toByteArray())
-                    conn.responseCode // trigger connection
-                    conn.disconnect()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            } else {
-                try {
-                    val urlSpec = "http://$ip:$port/ping"
-                    val url = URL(urlSpec)
-                    val conn = url.openConnection() as HttpURLConnection
-                    conn.connectTimeout = 1000
-                    conn.readTimeout = 1000
-                    conn.requestMethod = "GET"
-                    conn.responseCode
-                    conn.disconnect()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            try {
+                val urlSpec = "http://$ip:$port/ping"
+                val url = URL(urlSpec)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.connectTimeout = 800
+                conn.readTimeout = 800
+                conn.requestMethod = "GET"
+                
+                val code = conn.responseCode
+                conn.disconnect()
+            } catch (e: Exception) {
+                // Network failures are ignored in background logs
+                e.printStackTrace()
             }
         }
     }

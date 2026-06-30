@@ -3,7 +3,6 @@ import os
 import time
 import math
 import threading
-import requests
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PyQt6.QtCore import QObject, QTimer, Qt
@@ -21,7 +20,6 @@ import winsound
 
 # Thread-safe global event flag for Android mobile pings
 phone_active_event = threading.Event()
-last_phone_ping_time = 0.0
 
 class PhoneSensorHTTPHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -29,8 +27,6 @@ class PhoneSensorHTTPHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/ping":
-            global last_phone_ping_time
-            last_phone_ping_time = time.time()
             phone_active_event.set()
             self.send_response(200)
             self.send_header("Content-type", "text/plain")
@@ -88,10 +84,6 @@ class GazeReaderApp(QObject):
         self.server_thread = threading.Thread(target=self.run_sensor_server, daemon=True)
         self.server_thread.start()
         self.run_adb_reverse()
-        
-        # 6. Start background Firebase database stream listener thread
-        self.firebase_thread = threading.Thread(target=self.run_firebase_listener, daemon=True)
-        self.firebase_thread.start()
         
         # Bind dashboard actions
         self.dashboard.pomodoro_toggled.connect(self.handle_pomodoro_toggle)
@@ -199,15 +191,6 @@ class GazeReaderApp(QObject):
 
     # --- Central Focus & Distraction Engine (1-Second clock tick) ---
     def study_clock_tick(self):
-        # Update Phone Link status dynamically for Local Mode
-        link_mode = database.get_setting("phone_link_mode", "LOCAL")
-        if link_mode == "LOCAL":
-            global last_phone_ping_time
-            if time.time() - last_phone_ping_time < 5.0:
-                self.dashboard.set_phone_status("connected", "Local Sockets")
-            else:
-                self.dashboard.set_phone_status("offline", "Local Sockets")
-
         # 1. Process blacklist monitor checks
         is_distracted, detail_reason = hooks.check_is_distracted_active(self.dashboard.blacklist_items)
         
@@ -423,76 +406,6 @@ class GazeReaderApp(QObject):
                 subprocess.run([adb_path, "reverse", "tcp:5001", "tcp:5001"], capture_output=True)
         except Exception as e:
             print("Failed to auto-configure ADB reverse:", e)
-
-    def run_firebase_listener(self):
-        import json
-        while True:
-            link_mode = database.get_setting("phone_link_mode", "LOCAL")
-            if link_mode != "CLOUD":
-                time.sleep(2)
-                continue
-                
-            firebase_url = database.get_setting("firebase_url", "")
-            firebase_path = database.get_setting("firebase_path", "yaseen")
-            
-            # Safe type conversion & strip
-            firebase_url = str(firebase_url).strip() if firebase_url else ""
-            firebase_path = str(firebase_path).strip() if firebase_path else ""
-            
-            if not firebase_url or not firebase_path:
-                time.sleep(2)
-                continue
-                
-            # Sanitize URL format
-            if not firebase_url.startswith("http"):
-                firebase_url = "https://" + firebase_url
-            if firebase_url.endswith("/"):
-                firebase_url = firebase_url[:-1]
-                
-            stream_url = f"{firebase_url}/users/{firebase_path}/phone_active.json"
-            
-            try:
-                def set_connecting():
-                    self.dashboard.set_phone_status("connecting", "Cloud")
-                QTimer.singleShot(0, set_connecting)
-                
-                # Open SSE Stream with keep-alive
-                response = requests.get(stream_url, stream=True, headers={"Accept": "text/event-stream"}, timeout=60)
-                
-                def set_connected():
-                    self.dashboard.set_phone_status("connected", "Cloud")
-                QTimer.singleShot(0, set_connected)
-                
-                for line in response.iter_lines():
-                    if not line:
-                        continue
-                    decoded = line.decode('utf-8').strip()
-                    if decoded.startswith("data:"):
-                        payload = decoded[5:].strip()
-                        if payload == "null" or not payload:
-                            continue
-                        try:
-                            val = json.loads(payload)
-                            actual_val = None
-                            if isinstance(val, dict):
-                                if "data" in val:
-                                    actual_val = val["data"]
-                            else:
-                                actual_val = val
-                                
-                            if actual_val is True:
-                                global last_phone_ping_time
-                                last_phone_ping_time = time.time()
-                                print("[Firebase] Phone activity detected via Cloud stream!")
-                                phone_active_event.set()
-                        except Exception:
-                            pass
-            except Exception as e:
-                def set_offline():
-                    self.dashboard.set_phone_status("offline", "Error")
-                QTimer.singleShot(0, set_offline)
-                print("Firebase Cloud stream disconnected, retrying in 3s...", e)
-                time.sleep(3)
 
     def terminate_app(self):
         if self.server:

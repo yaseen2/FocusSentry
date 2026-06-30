@@ -17,152 +17,45 @@
         android:layout_marginTop="20dp"
         android:layout_marginBottom="30dp" />
 
-    <RadioGroup
-        android:id="@+id/rgMode"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_horizontal"
-        android:layout_marginBottom="20dp">
+        android:text="Laptop IP Address"
+        android:textColor="#94a3b8"
+        android:textSize="14sp"
+        android:layout_marginBottom="6dp" />
 
-        <RadioButton
-            android:id="@+id/rbLocal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Local (IP/USB)"
-            android:textColor="#f8fafc"
-            android:buttonTint="#6366f1"
-            android:textSize="14sp"
-            android:checked="true"
-            android:layout_marginRight="20dp" />
+    <EditText
+        android:id="@+id/etIp"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="e.g. 192.168.1.15"
+        android:textColor="#f8fafc"
+        android:textColorHint="#475569"
+        android:inputType="phone"
+        android:background="@android:drawable/editbox_background_normal"
+        android:padding="10dp"
+        android:layout_marginBottom="20dp" />
 
-        <RadioButton
-            android:id="@+id/rbCloud"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cloud (Firebase)"
-            android:textColor="#f8fafc"
-            android:buttonTint="#6366f1"
-            android:textSize="14sp" />
-    </RadioGroup>
-
-    <!-- LOCAL SETTINGS CONTAINER -->
-    <LinearLayout
-        android:id="@+id/layoutLocal"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="visible">
+        android:text="Laptop Port"
+        android:textColor="#94a3b8"
+        android:textSize="14sp"
+        android:layout_marginBottom="6dp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Laptop IP Address"
-            android:textColor="#94a3b8"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
-
-        <EditText
-            android:id="@+id/etIp"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="e.g. 192.168.1.15"
-            android:textColor="#f8fafc"
-            android:textColorHint="#475569"
-            android:inputType="phone"
-            android:background="@android:drawable/editbox_background_normal"
-            android:padding="10dp"
-            android:layout_marginBottom="15dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Laptop Port"
-            android:textColor="#94a3b8"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
-
-        <EditText
-            android:id="@+id/etPort"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="5001"
-            android:textColor="#f8fafc"
-            android:textColorHint="#475569"
-            android:inputType="number"
-            android:background="@android:drawable/editbox_background_normal"
-            android:padding="10dp"
-            android:layout_marginBottom="15dp" />
-
-        <Button
-            android:id="@+id/btnTestLocal"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:text="🧪 Test Local Connection"
-            android:textColor="#ffffff"
-            android:backgroundTint="#475569"
-            android:textSize="12sp"
-            android:layout_marginBottom="10dp" />
-    </LinearLayout>
-
-    <!-- CLOUD SETTINGS CONTAINER -->
-    <LinearLayout
-        android:id="@+id/layoutCloud"
+    <EditText
+        android:id="@+id/etPort"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Firebase Database URL"
-            android:textColor="#94a3b8"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
-
-        <EditText
-            android:id="@+id/etFirebaseUrl"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="https://database-name.firebaseio.com"
-            android:textColor="#f8fafc"
-            android:textColorHint="#475569"
-            android:inputType="textUri"
-            android:background="@android:drawable/editbox_background_normal"
-            android:padding="10dp"
-            android:layout_marginBottom="15dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Firebase User Path / ID"
-            android:textColor="#94a3b8"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
-
-        <EditText
-            android:id="@+id/etFirebasePath"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="e.g. yaseen"
-            android:textColor="#f8fafc"
-            android:textColorHint="#475569"
-            android:inputType="text"
-            android:background="@android:drawable/editbox_background_normal"
-            android:padding="10dp"
-            android:layout_marginBottom="15dp" />
-
-        <Button
-            android:id="@+id/btnTestCloud"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:text="🧪 Test Firebase Connection"
-            android:textColor="#ffffff"
-            android:backgroundTint="#475569"
-            android:textSize="12sp"
-            android:layout_marginBottom="10dp" />
-    </LinearLayout>
+        android:layout_height="48dp"
+        android:hint="5001"
+        android:textColor="#f8fafc"
+        android:textColorHint="#475569"
+        android:inputType="number"
+        android:background="@android:drawable/editbox_background_normal"
+        android:padding="10dp"
+        android:layout_marginBottom="25dp" />
 
     <TextView
         android:layout_width="match_parent"
