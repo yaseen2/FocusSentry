@@ -6,13 +6,64 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, 
     QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QImage, QPixmap, QColor
+from PyQt6.QtCore import Qt, pyqtSignal, QRect
+from PyQt6.QtGui import QFont, QImage, QPixmap, QColor, QPainter, QPen, QBrush
 import ctypes
 from ctypes import wintypes
 
 # Database Connectors
 import database
+
+class DistractionDonutChart(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.data = [] # List of {"label": str, "value": int, "color": QColor}
+        self.setMinimumSize(110, 110)
+        self.setMaximumSize(110, 110)
+        
+    def setData(self, data):
+        self.data = data
+        self.update()
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        w = self.width()
+        h = self.height()
+        size = min(w, h) - 16
+        if size <= 0: return
+        
+        cx = (w - size) // 2
+        cy = (h - size) // 2
+        rect = QRect(cx + 8, cy + 8, size - 16, size - 16)
+        
+        total = sum(d["value"] for d in self.data)
+        if total == 0:
+            # Draw a simple default empty grey circle
+            pen = QPen(QColor("#1e293b"))
+            pen.setWidth(12)
+            painter.setPen(pen)
+            painter.drawArc(rect, 0, 360 * 16)
+            return
+            
+        current_angle = 90 * 16 # Start at 12 o'clock (90 degrees in Qt geometry)
+        pen = QPen()
+        pen.setWidth(12)
+        pen.setCapStyle(Qt.PenCapStyle.FlatCap)
+        
+        for item in self.data:
+            share = item["value"] / total
+            span = int(share * 360 * 16)
+            
+            # Segment gap
+            gap = 32 # 2 degrees in 16ths format
+            if span > gap:
+                pen.setColor(item["color"])
+                painter.setPen(pen)
+                painter.drawArc(rect, current_angle + gap // 2, span - gap)
+                
+            current_angle += span
 
 class StudyDashboard(QWidget):
     pomodoro_toggled = pyqtSignal(bool)
@@ -598,6 +649,43 @@ class StudyDashboard(QWidget):
         journal_layout.addWidget(self.chart_scroll)
         col3_layout.addWidget(self.journal_card)
         
+        # ========================================================
+        # COLUMN 3 EXTRA CARD: DISTRACTION BREAKDOWN
+        # ========================================================
+        self.distraction_card = QFrame(self)
+        self.distraction_card.setProperty("class", "card")
+        self.distraction_card.setFixedHeight(210)
+        dist_layout = QVBoxLayout(self.distraction_card)
+        dist_layout.setContentsMargins(16, 16, 16, 16)
+        dist_layout.setSpacing(10)
+        
+        dist_title = QLabel("📊 DISTRACTION BREAKDOWN", self.distraction_card)
+        dist_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
+        dist_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
+        dist_layout.addWidget(dist_title)
+        
+        # Horizontal Chart Row
+        chart_row = QHBoxLayout()
+        chart_row.setSpacing(16)
+        
+        self.donut_chart = DistractionDonutChart(self.distraction_card)
+        chart_row.addWidget(self.donut_chart)
+        
+        # Legend layout on right side
+        from PyQt6.QtWidgets import QGridLayout
+        self.legend_widget = QWidget(self.distraction_card)
+        self.legend_widget.setStyleSheet("background: transparent;")
+        self.legend_layout = QGridLayout(self.legend_widget)
+        self.legend_layout.setContentsMargins(0, 0, 0, 0)
+        self.legend_layout.setHorizontalSpacing(8)
+        self.legend_layout.setVerticalSpacing(4)
+        self.legend_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        
+        chart_row.addWidget(self.legend_widget, 1)
+        dist_layout.addLayout(chart_row)
+        
+        col3_layout.addWidget(self.distraction_card)
+        
         cols_layout.addLayout(col3_layout)
 
         # Add columns to outer layout
@@ -805,6 +893,75 @@ class StudyDashboard(QWidget):
             col_layout.addWidget(day_label)
             
             self.chart_layout.addWidget(bar_col)
+            
+        self.update_distraction_breakdown()
+
+    def update_distraction_breakdown(self):
+        # Fetch data from DB
+        top_dist = database.get_top_distractions()
+        
+        # Define modern colors
+        COLORS = [
+            QColor("#6366f1"), # Indigo
+            QColor("#f43f5e"), # Rose
+            QColor("#fbbf24"), # Amber
+            QColor("#34d399"), # Emerald
+            QColor("#2dd4bf")  # Teal
+        ]
+        
+        # Clear legend layout safely by detaching from parent immediately
+        while self.legend_layout.count():
+            item = self.legend_layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.setParent(None)
+                w.deleteLater()
+            
+        if not top_dist:
+            # Placeholder label spanning both columns
+            lbl_empty = QLabel("No distractions logged yet!\nFocus is perfect 🎯", self.legend_widget)
+            lbl_empty.setFont(QFont("Inter", 9))
+            lbl_empty.setStyleSheet("color: #64748b; line-height: 1.4;")
+            lbl_empty.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            self.legend_layout.addWidget(lbl_empty, 0, 0, 1, 2)
+            self.donut_chart.setData([])
+            return
+            
+        chart_data = []
+        for i, item in enumerate(top_dist):
+            color = COLORS[i % len(COLORS)]
+            chart_data.append({
+                "label": item["domain_or_app"],
+                "value": item["total_seconds"],
+                "color": color
+            })
+            
+            # Format time beautifully
+            sec = item["total_seconds"]
+            if sec >= 60:
+                time_str = f"{round(sec / 60)}m"
+            else:
+                time_str = f"{sec}s"
+                
+            # Bullet Dot
+            dot = QLabel("●", self.legend_widget)
+            dot.setFont(QFont("Inter", 12))
+            dot.setStyleSheet(f"color: {color.name()};")
+            dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            
+            # Label
+            name = item["domain_or_app"]
+            if len(name) > 18:
+                name = name[:16] + "..."
+            text = QLabel(f"{name} ({time_str})", self.legend_widget)
+            text.setFont(QFont("Inter", 9, QFont.Weight.Bold))
+            text.setStyleSheet("color: #cbd5e1;")
+            text.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            
+            self.legend_layout.addWidget(dot, i, 0)
+            self.legend_layout.addWidget(text, i, 1)
+            
+        self.donut_chart.setData(chart_data)
 
     # --- Windows Startup manager toggle ---
     def toggle_startup_preference(self, state):
