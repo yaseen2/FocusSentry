@@ -70,8 +70,8 @@ class FocusProgressCircle(QWidget):
         super().__init__(parent)
         self.active_seconds = 0
         self.target_seconds = 9 * 3600 # 9 hours target
-        self.setMinimumSize(140, 140)
-        self.setMaximumSize(140, 140)
+        self.setMinimumSize(120, 120)
+        self.setMaximumSize(120, 120)
         
     def setProgress(self, active_seconds):
         self.active_seconds = active_seconds
@@ -83,16 +83,16 @@ class FocusProgressCircle(QWidget):
         
         w = self.width()
         h = self.height()
-        size = min(w, h) - 16
+        size = min(w, h) - 12
         if size <= 0: return
         
         cx = (w - size) // 2
         cy = (h - size) // 2
         
         # 1. Draw background circular track
-        rect = QRect(cx + 8, cy + 8, size - 16, size - 16)
+        rect = QRect(cx + 6, cy + 6, size - 12, size - 12)
         pen_bg = QPen(QColor("#1e293b"))
-        pen_bg.setWidth(8)
+        pen_bg.setWidth(6)
         painter.setPen(pen_bg)
         painter.drawEllipse(rect)
         
@@ -100,7 +100,7 @@ class FocusProgressCircle(QWidget):
         percent = min(1.0, self.active_seconds / self.target_seconds)
         if percent > 0:
             pen_fg = QPen()
-            pen_fg.setWidth(8)
+            pen_fg.setWidth(6)
             pen_fg.setCapStyle(Qt.PenCapStyle.RoundCap)
             # Color is Indigo when under target, shifts to Emerald when completed
             pen_fg.setColor(QColor("#6366f1") if percent < 1.0 else QColor("#10b981"))
@@ -114,8 +114,8 @@ class FocusProgressCircle(QWidget):
         # 3. Draw text label metrics inside the ring
         percent_str = f"{int(percent * 100)}%"
         painter.setPen(QColor("#f8fafc"))
-        painter.setFont(QFont("Outfit", 16, QFont.Weight.Bold))
-        percent_rect = QRect(cx, cy + size // 2 - 20, size, 22)
+        painter.setFont(QFont("Outfit", 13, QFont.Weight.Bold))
+        percent_rect = QRect(cx, cy + size // 2 - 16, size, 18)
         painter.drawText(percent_rect, Qt.AlignmentFlag.AlignCenter, percent_str)
         
         # Duration string
@@ -123,8 +123,8 @@ class FocusProgressCircle(QWidget):
         m_part = (self.active_seconds % 3600) // 60
         duration_str = f"{h_part}h {m_part}m"
         painter.setPen(QColor("#94a3b8"))
-        painter.setFont(QFont("Inter", 8, QFont.Weight.Bold))
-        dur_rect = QRect(cx, cy + size // 2 + 4, size, 16)
+        painter.setFont(QFont("Inter", 7, QFont.Weight.Bold))
+        dur_rect = QRect(cx, cy + size // 2 + 4, size, 14)
         painter.drawText(dur_rect, Qt.AlignmentFlag.AlignCenter, duration_str)
 
 class StudyDashboard(QWidget):
@@ -721,7 +721,7 @@ class StudyDashboard(QWidget):
         
         # Circular Focus Progress Ring container
         self.circle_container = QFrame(self.journal_card)
-        self.circle_container.setFixedHeight(140)
+        self.circle_container.setFixedHeight(120)
         self.circle_container.setStyleSheet("background: transparent; border-top: 1px solid rgba(255,255,255,0.04);")
         circle_layout = QHBoxLayout(self.circle_container)
         circle_layout.setContentsMargins(0, 0, 0, 0)
