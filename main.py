@@ -241,7 +241,7 @@ class GazeReaderApp(QObject):
             if not is_overlay_blocking:
                 self.distracted_study_seconds += 1
             database.log_distraction(detail_reason, 1)
-            self.trigger_all_overlays_lockout(detail_reason)
+            self.trigger_all_overlays_warning(detail_reason)
             return
 
         # Check Android Mobile Phone Activity Event
