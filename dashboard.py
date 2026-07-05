@@ -69,7 +69,7 @@ class FocusProgressCircle(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.active_seconds = 0
-        self.target_seconds = 10 * 3600 # 10 hours target
+        self.target_seconds = 9 * 3600 # 9 hours target
         self.setMinimumSize(140, 140)
         self.setMaximumSize(140, 140)
         
@@ -926,7 +926,7 @@ class StudyDashboard(QWidget):
 
         if self.current_filter_mode == "DAY":
             # 1. Update Notice Callout Banner Wording and Styles
-            target_seconds = 10 * 3600 # 10 hours
+            target_seconds = 9 * 3600 # 9 hours
             remaining_seconds = target_seconds - today_active
             if remaining_seconds > 0:
                 rem_h = remaining_seconds // 3600
@@ -935,10 +935,10 @@ class StudyDashboard(QWidget):
                     time_str = f"{rem_h}h {rem_m}m"
                 else:
                     time_str = f"{rem_m}m"
-                self.lbl_target_notice.setText(f"Quest status: Focus for {time_str} more today to reach your 10h target! 🎯")
+                self.lbl_target_notice.setText(f"Quest status: Focus for {time_str} more today to reach your 9h target! 🎯")
                 self.lbl_target_notice.setStyleSheet("color: #6366f1; background: rgba(99, 102, 241, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.1); margin-top: 4px;")
             else:
-                self.lbl_target_notice.setText("Quest completed! You reached your daily 10-hour focus target! 🏆")
+                self.lbl_target_notice.setText("Quest completed! You reached your daily 9-hour focus target! 🏆")
                 self.lbl_target_notice.setStyleSheet("color: #10b981; background: rgba(16, 185, 129, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.1); margin-top: 4px;")
             
             # Show/Hide correct widgets
