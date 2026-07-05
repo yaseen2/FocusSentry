@@ -132,15 +132,21 @@ def get_7_day_history():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Fetch last 7 rows ordered by timestamp
+    # Group by calendar date local-time to merge multiple sessions on the same day
     cursor.execute("""
-        SELECT day, active_seconds, distracted_seconds FROM study_sessions
-        ORDER BY timestamp DESC LIMIT 7
+        SELECT 
+            day,
+            SUM(active_seconds) as active_seconds,
+            SUM(distracted_seconds) as distracted_seconds,
+            MAX(timestamp) as max_ts
+        FROM study_sessions
+        GROUP BY date(timestamp, 'unixepoch', 'localtime')
+        ORDER BY max_ts DESC LIMIT 7
     """)
     rows = cursor.fetchall()
     conn.close()
     
-    # Reverse to show in correct chronological order (Mon -> Sun)
+    # Reverse to show in correct chronological order
     return list(reversed([dict(r) for r in rows]))
 
 def get_top_distractions():
