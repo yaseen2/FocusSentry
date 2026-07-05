@@ -230,5 +230,23 @@ def get_monthly_history():
     conn.close()
     return [dict(r) for r in rows]
 
+def get_today_focus_time():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    import datetime
+    # Get midnight local calendar day start timestamp
+    today_start = int(datetime.datetime.combine(datetime.date.today(), datetime.time.min).timestamp())
+    cursor.execute("""
+        SELECT SUM(active_seconds) as total_active, SUM(distracted_seconds) as total_distracted 
+        FROM study_sessions 
+        WHERE timestamp >= ?
+    """, (today_start,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    active = row["total_active"] if row["total_active"] else 0
+    distracted = row["total_distracted"] if row["total_distracted"] else 0
+    return active, distracted
+
 # Initialize database on module load
 init_db()

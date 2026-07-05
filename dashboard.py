@@ -65,6 +65,68 @@ class DistractionDonutChart(QWidget):
                 
             current_angle += span
 
+class FocusProgressCircle(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.active_seconds = 0
+        self.target_seconds = 10 * 3600 # 10 hours target
+        self.setMinimumSize(180, 180)
+        self.setMaximumSize(180, 180)
+        
+    def setProgress(self, active_seconds):
+        self.active_seconds = active_seconds
+        self.update()
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        w = self.width()
+        h = self.height()
+        size = min(w, h) - 20
+        if size <= 0: return
+        
+        cx = (w - size) // 2
+        cy = (h - size) // 2
+        
+        # 1. Draw background circular track
+        rect = QRect(cx + 10, cy + 10, size - 20, size - 20)
+        pen_bg = QPen(QColor("#1e293b"))
+        pen_bg.setWidth(10)
+        painter.setPen(pen_bg)
+        painter.drawEllipse(rect)
+        
+        # 2. Draw active progress arc
+        percent = min(1.0, self.active_seconds / self.target_seconds)
+        if percent > 0:
+            pen_fg = QPen()
+            pen_fg.setWidth(10)
+            pen_fg.setCapStyle(Qt.PenCapStyle.RoundCap)
+            # Color is Indigo when under target, shifts to Emerald when completed
+            pen_fg.setColor(QColor("#6366f1") if percent < 1.0 else QColor("#10b981"))
+            painter.setPen(pen_fg)
+            
+            # Start at 12 o'clock (90 degrees in Qt geometry). Go clockwise (negative span angle)
+            start_angle = 90 * 16
+            span_angle = -int(percent * 360 * 16)
+            painter.drawArc(rect, start_angle, span_angle)
+            
+        # 3. Draw text label metrics inside the ring
+        percent_str = f"{int(percent * 100)}%"
+        painter.setPen(QColor("#f8fafc"))
+        painter.setFont(QFont("Outfit", 20, QFont.Weight.Bold))
+        percent_rect = QRect(cx, cy + size // 2 - 28, size, 30)
+        painter.drawText(percent_rect, Qt.AlignmentFlag.AlignCenter, percent_str)
+        
+        # Duration string
+        h_part = self.active_seconds // 3600
+        m_part = (self.active_seconds % 3600) // 60
+        duration_str = f"{h_part}h {m_part}m"
+        painter.setPen(QColor("#94a3b8"))
+        painter.setFont(QFont("Inter", 9, QFont.Weight.Bold))
+        dur_rect = QRect(cx, cy + size // 2 + 6, size, 20)
+        painter.drawText(dur_rect, Qt.AlignmentFlag.AlignCenter, duration_str)
+
 class StudyDashboard(QWidget):
     pomodoro_toggled = pyqtSignal(bool)
     blacklist_updated = pyqtSignal()
@@ -623,6 +685,15 @@ class StudyDashboard(QWidget):
         grid_layout.addWidget(self.j_card3)
         journal_layout.addLayout(grid_layout)
         
+        # Target Notice Banner (Motivational Callout Badge)
+        self.lbl_target_notice = QLabel("", self.journal_card)
+        self.lbl_target_notice.setFont(QFont("Inter", 9, QFont.Weight.Bold))
+        self.lbl_target_notice.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_target_notice.setWordWrap(True)
+        self.lbl_target_notice.setStyleSheet("color: #6366f1; background: rgba(99, 102, 241, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.1); margin-top: 4px;")
+        self.lbl_target_notice.setVisible(False)
+        journal_layout.addWidget(self.lbl_target_notice)
+        
         # Scroll Area for mini bar chart (to handle 24h or 30d without truncation)
         from PyQt6.QtWidgets import QScrollArea
         self.chart_scroll = QScrollArea(self.journal_card)
@@ -647,6 +718,20 @@ class StudyDashboard(QWidget):
         
         self.chart_scroll.setWidget(self.chart_frame)
         journal_layout.addWidget(self.chart_scroll)
+        
+        # Circular Focus Progress Ring container
+        self.circle_container = QFrame(self.journal_card)
+        self.circle_container.setFixedHeight(180)
+        self.circle_container.setStyleSheet("background: transparent; border-top: 1px solid rgba(255,255,255,0.04);")
+        circle_layout = QHBoxLayout(self.circle_container)
+        circle_layout.setContentsMargins(0, 0, 0, 0)
+        circle_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.progress_circle = FocusProgressCircle(self.circle_container)
+        circle_layout.addWidget(self.progress_circle)
+        self.circle_container.setVisible(False)
+        journal_layout.addWidget(self.circle_container)
+        
         col3_layout.addWidget(self.journal_card)
         
         # ========================================================
@@ -815,18 +900,21 @@ class StudyDashboard(QWidget):
 
     # --- Journal Statistics drawing ---
     def update_journal_metrics(self):
-        if self.current_filter_mode == "DAY":
-            history = database.get_daily_hourly_history()
-        elif self.current_filter_mode == "MONTH":
-            history = database.get_monthly_history()
-        else:
-            history = database.get_7_day_history()
+        # Query precise calendar today totals for DAY mode, else aggregate from history
+        today_active, today_distracted = database.get_today_focus_time()
         
-        total_active = 0
-        total_distracted = 0
-        for entry in history:
-            total_active += entry["active_seconds"]
-            total_distracted += entry["distracted_seconds"]
+        if self.current_filter_mode == "DAY":
+            total_active = today_active
+            total_distracted = today_distracted
+            history = []
+        else:
+            if self.current_filter_mode == "MONTH":
+                history = database.get_monthly_history()
+            else:
+                history = database.get_7_day_history()
+            
+            total_active = sum(entry["active_seconds"] for entry in history)
+            total_distracted = sum(entry["distracted_seconds"] for entry in history)
             
         active_min = round(total_active / 60)
         distracted_min = round(total_distracted / 60)
@@ -836,63 +924,92 @@ class StudyDashboard(QWidget):
         self.lbl_j_distracted.setText(f"{distracted_min}m")
         self.lbl_j_ratio.setText(f"{efficiency}%")
 
-        # Rebuild visual layout bars
-        # Clear layout
-        while self.chart_layout.count():
-            item = self.chart_layout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.deleteLater()
-
-        if not history:
-            empty_lbl = QLabel("Start studying to generate journal stats", self.chart_frame)
-            empty_lbl.setFont(QFont("Inter", 9))
-            empty_lbl.setStyleSheet("color: #475569;")
-            empty_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.chart_layout.addWidget(empty_lbl)
-            return
-
-        max_val = 1
-        for e in history:
-            s = e["active_seconds"] + e["distracted_seconds"]
-            if s > max_val: max_val = s
-
-        for entry in history:
-            bar_col = QFrame(self.chart_frame)
-            bar_col.setFixedWidth(42)
-            bar_col.setStyleSheet("background: transparent;")
+        if self.current_filter_mode == "DAY":
+            # 1. Update Notice Callout Banner Wording and Styles
+            target_seconds = 10 * 3600 # 10 hours
+            remaining_seconds = target_seconds - today_active
+            if remaining_seconds > 0:
+                rem_h = remaining_seconds // 3600
+                rem_m = (remaining_seconds % 3600) // 60
+                if rem_h > 0:
+                    time_str = f"{rem_h}h {rem_m}m"
+                else:
+                    time_str = f"{rem_m}m"
+                self.lbl_target_notice.setText(f"Quest status: Focus for {time_str} more today to reach your 10h target! 🎯")
+                self.lbl_target_notice.setStyleSheet("color: #6366f1; background: rgba(99, 102, 241, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.1); margin-top: 4px;")
+            else:
+                self.lbl_target_notice.setText("Quest completed! You reached your daily 10-hour focus target! 🏆")
+                self.lbl_target_notice.setStyleSheet("color: #10b981; background: rgba(16, 185, 129, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.1); margin-top: 4px;")
             
-            col_layout = QVBoxLayout(bar_col)
-            col_layout.setContentsMargins(0, 0, 0, 0)
-            col_layout.setSpacing(3)
-            col_layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
-
-            # Draw visual heights (Max height is 110px now!)
-            act_h = max(2, int((entry["active_seconds"] / max_val) * 110))
-            dist_h = max(2, int((entry["distracted_seconds"] / max_val) * 110))
-
-            f_dist = QFrame(bar_col)
-            f_dist.setFixedHeight(dist_h)
-            f_dist.setFixedWidth(24)
-            f_dist.setStyleSheet("background-color: #f43f5e; border-radius: 3px;")
-            f_dist.setToolTip(f"Distracted: {round(entry['distracted_seconds']/60)}m")
+            # Show/Hide correct widgets
+            self.lbl_target_notice.setVisible(True)
+            self.chart_scroll.setVisible(False)
+            self.circle_container.setVisible(True)
+            self.progress_circle.setProgress(today_active)
+        else:
+            # Hide target overlays and show bar charts
+            self.lbl_target_notice.setVisible(False)
+            self.chart_scroll.setVisible(True)
+            self.circle_container.setVisible(False)
             
-            f_act = QFrame(bar_col)
-            f_act.setFixedHeight(act_h)
-            f_act.setFixedWidth(24)
-            f_act.setStyleSheet("background-color: #6366f1; border-radius: 3px;")
-            f_act.setToolTip(f"Focused: {round(entry['active_seconds']/60)}m")
+            # Rebuild visual layout bars
+            # Clear layout
+            while self.chart_layout.count():
+                item = self.chart_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
 
-            col_layout.addWidget(f_dist, 0, Qt.AlignmentFlag.AlignHCenter)
-            col_layout.addWidget(f_act, 0, Qt.AlignmentFlag.AlignHCenter)
-            
-            day_label = QLabel(entry["day"], bar_col)
-            day_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
-            day_label.setStyleSheet("color: #64748b; font-weight: bold;")
-            day_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            col_layout.addWidget(day_label)
-            
-            self.chart_layout.addWidget(bar_col)
+            if not history:
+                empty_lbl = QLabel("Start studying to generate journal stats", self.chart_frame)
+                empty_lbl.setFont(QFont("Inter", 9))
+                empty_lbl.setStyleSheet("color: #475569;")
+                empty_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.chart_layout.addWidget(empty_lbl)
+                self.update_distraction_breakdown()
+                return
+
+            max_val = 1
+            for e in history:
+                s = e["active_seconds"] + e["distracted_seconds"]
+                if s > max_val: max_val = s
+
+            for entry in history:
+                bar_col = QFrame(self.chart_frame)
+                bar_col.setFixedWidth(42)
+                bar_col.setStyleSheet("background: transparent;")
+                
+                col_layout = QVBoxLayout(bar_col)
+                col_layout.setContentsMargins(0, 0, 0, 0)
+                col_layout.setSpacing(3)
+                col_layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
+
+                # Draw visual heights (Max height is 110px now!)
+                act_h = max(2, int((entry["active_seconds"] / max_val) * 110))
+                dist_h = max(2, int((entry["distracted_seconds"] / max_val) * 110))
+
+                f_dist = QFrame(bar_col)
+                f_dist.setFixedHeight(dist_h)
+                f_dist.setFixedWidth(24)
+                f_dist.setStyleSheet("background-color: #f43f5e; border-radius: 3px;")
+                f_dist.setToolTip(f"Distracted: {round(entry['distracted_seconds']/60)}m")
+                
+                f_act = QFrame(bar_col)
+                f_act.setFixedHeight(act_h)
+                f_act.setFixedWidth(24)
+                f_act.setStyleSheet("background-color: #6366f1; border-radius: 3px;")
+                f_act.setToolTip(f"Focused: {round(entry['active_seconds']/60)}m")
+
+                col_layout.addWidget(f_dist, 0, Qt.AlignmentFlag.AlignHCenter)
+                col_layout.addWidget(f_act, 0, Qt.AlignmentFlag.AlignHCenter)
+                
+                day_label = QLabel(entry["day"], bar_col)
+                day_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+                day_label.setStyleSheet("color: #64748b; font-weight: bold;")
+                day_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                col_layout.addWidget(day_label)
+                
+                self.chart_layout.addWidget(bar_col)
             
         self.update_distraction_breakdown()
 
