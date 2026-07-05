@@ -37,22 +37,6 @@ class PhoneSensorHTTPHandler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-def clean_distraction_reason(reason):
-    if not reason:
-        return "Other"
-    r = reason.lower()
-    if "phone" in r:
-        return "Phone Activity"
-    if "looking away" in r:
-        return "Looking Away"
-    if "face missing" in r:
-        return "Face Missing"
-    if "eye rolling" in r:
-        return "Eye Rolling"
-    if "idle" in r:
-        return "System Idle"
-    return reason
-
 class GazeReaderApp(QObject):
     def __init__(self):
         super().__init__()
@@ -72,7 +56,6 @@ class GazeReaderApp(QObject):
         self.last_offending_yaw = 0.0
         self.last_offending_pitch = 0.0
         self.last_warning_time = 0.0
-        self.autosave_ticks = 0
         
         # 1. Initialize UI Controls
         self.dashboard = StudyDashboard()
@@ -223,13 +206,6 @@ class GazeReaderApp(QObject):
         if not self.pomodoro_active or self.pomodoro_phase == "BREAK":
             return
 
-        # Periodic autosave database update (every 10 seconds)
-        self.autosave_ticks += 1
-        if self.autosave_ticks >= 10:
-            self.autosave_ticks = 0
-            if self.active_study_seconds > 0 or self.distracted_study_seconds > 0:
-                self.save_study_session()
-
         # 1. Track distracted seconds if the overlay is currently active (warning or lockout)
         is_overlay_blocking = False
         if len(self.overlays) > 0 and self.overlays[0].state in ["PRE_WARNING", "DISTRACTED"]:
@@ -241,7 +217,7 @@ class GazeReaderApp(QObject):
             if not is_overlay_blocking:
                 self.distracted_study_seconds += 1
             database.log_distraction(detail_reason, 1)
-            self.trigger_all_overlays_warning(detail_reason)
+            self.trigger_all_overlays_lockout(detail_reason)
             return
 
         # Check Android Mobile Phone Activity Event
@@ -253,7 +229,7 @@ class GazeReaderApp(QObject):
         if phone_triggered:
             self.phone_pickup_warnings += 1
             if self.phone_pickup_warnings >= 3:
-                database.log_distraction("Phone Activity", 1)
+                database.log_distraction("Phone Distraction Limit Exceeded (3 Pickups)", 1)
                 import ctypes
                 try:
                     ctypes.windll.user32.LockWorkStation()
@@ -262,13 +238,6 @@ class GazeReaderApp(QObject):
                 self.trigger_all_overlays_lockout("Phone Limit Exceeded (3/3 Pickups) - Computer Locked")
             else:
                 self.trigger_all_overlays_warning(f"Phone Activity Detected ({self.phone_pickup_warnings}/3 Pickups)")
-            return
-
-        # If warning/lockout overlay is active, log the standardized category reason
-        if is_overlay_blocking:
-            reason = self.overlays[0].countdown_reason
-            database.log_distraction(clean_distraction_reason(reason), 1)
-            # Skip checking camera sensor when blocked
             return
 
         # 2. Analyze Camera Landmark Feed
@@ -385,9 +354,6 @@ class GazeReaderApp(QObject):
             self.dashboard.update_journal_metrics()
             self.clear_all_overlays() # Clear any active lockout overlays during break
             
-            # Stop camera tracker to release camera hardware and turn off LED
-            self.tracker_thread.stop()
-            
             # Show native Windows system tray notification
             self.tray_icon.showMessage(
                 "FocusSentry - Break Time!",
@@ -399,10 +365,6 @@ class GazeReaderApp(QObject):
             self.pomodoro_phase = "FOCUS"
             self.study_time_left = 50 * 60 # 50-minute study
             self.phone_pickup_warnings = 0 # reset warnings
-            
-            # Start camera tracker thread back up and auto-calibrate
-            self.tracker_thread.start()
-            QTimer.singleShot(2500, self.calibrate_center_baseline)
             
             # Show native Windows system tray notification
             self.tray_icon.showMessage(
