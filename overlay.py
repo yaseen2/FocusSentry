@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QFrame
+from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QApplication
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRect
 from PyQt6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QLinearGradient
 
@@ -243,3 +243,106 @@ class DesktopOverlay(QWidget):
             self.request_resume()
         else:
             super().keyPressEvent(event)
+
+class AmbientStatusPill(QWidget):
+    toggle_session_requested = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.is_active = False
+        
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool |
+            Qt.WindowType.SubWindow
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        self.init_ui()
+        self.position_on_screen()
+
+    def init_ui(self):
+        self.card = QFrame(self)
+        self.card.setStyleSheet("""
+            QFrame {
+                background-color: rgba(15, 23, 42, 0.94);
+                border: 1px solid rgba(245, 158, 11, 0.6);
+                border-radius: 18px;
+            }
+        """)
+        layout = QHBoxLayout(self.card)
+        layout.setContentsMargins(14, 6, 16, 6)
+        layout.setSpacing(10)
+
+        self.lbl_dot = QLabel("⏸️", self.card)
+        self.lbl_dot.setFont(QFont("Segoe UI Emoji", 10))
+
+        self.lbl_status = QLabel("SESSION PAUSED  |  Press Ctrl+Alt+P", self.card)
+        self.lbl_status.setFont(QFont("Outfit", 9, QFont.Weight.Bold))
+        self.lbl_status.setStyleSheet("color: #f59e0b; font-weight: 700;")
+
+        layout.addWidget(self.lbl_dot)
+        layout.addWidget(self.lbl_status)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(self.card)
+
+    def position_on_screen(self):
+        primary = QApplication.primaryScreen()
+        if primary:
+            geom = primary.geometry()
+            w = 330
+            h = 38
+            x = geom.width() - w - 24
+            y = 18
+            self.setGeometry(x, y, w, h)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.toggle_session_requested.emit()
+
+    def update_session_state(self, active, time_left_seconds, phase):
+        self.is_active = active
+        mins = time_left_seconds // 60
+        secs = time_left_seconds % 60
+        time_str = f"{mins:02d}:{secs:02d}"
+
+        if not active:
+            self.lbl_dot.setText("⏸️")
+            self.lbl_status.setText("SESSION PAUSED  |  Press Ctrl+Alt+P")
+            self.lbl_status.setStyleSheet("color: #f59e0b; font-weight: 700;")
+            self.card.setStyleSheet("""
+                QFrame {
+                    background-color: rgba(15, 23, 42, 0.94);
+                    border: 1px solid rgba(245, 158, 11, 0.6);
+                    border-radius: 18px;
+                }
+            """)
+            self.show()
+        else:
+            if phase == "FOCUS":
+                self.lbl_dot.setText("🟢")
+                self.lbl_status.setText(f"FOCUS ACTIVE: {time_str}")
+                self.lbl_status.setStyleSheet("color: #34d399; font-weight: 700;")
+                self.card.setStyleSheet("""
+                    QFrame {
+                        background-color: rgba(6, 78, 59, 0.88);
+                        border: 1px solid rgba(52, 211, 153, 0.5);
+                        border-radius: 18px;
+                    }
+                """)
+            else:
+                self.lbl_dot.setText("☕")
+                self.lbl_status.setText(f"BREAK TIME: {time_str}")
+                self.lbl_status.setStyleSheet("color: #38bdf8; font-weight: 700;")
+                self.card.setStyleSheet("""
+                    QFrame {
+                        background-color: rgba(12, 74, 110, 0.88);
+                        border: 1px solid rgba(56, 189, 248, 0.5);
+                        border-radius: 18px;
+                    }
+                """)
+            self.show()

@@ -12,7 +12,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QBrush
 import database
 import hooks
 from tracker import FaceGazeTracker
-from overlay import DesktopOverlay
+from overlay import DesktopOverlay, AmbientStatusPill
 from dashboard import StudyDashboard
 
 # Audio alarm synthesis library
@@ -192,6 +192,11 @@ class GazeReaderApp(QObject):
         # Spawns fullscreen overlays on all active screens
         self.overlays = []
         self.init_screen_overlays()
+
+        # Ambient Status Pill (Visual Cue docked top-right)
+        self.ambient_pill = AmbientStatusPill()
+        self.ambient_pill.toggle_session_requested.connect(self.dashboard.toggle_pomodoro)
+        self.ambient_pill.update_session_state(self.pomodoro_active, self.study_time_left, self.pomodoro_phase)
         
         # 2. Initialize Camera Tracker Thread
         self.tracker_thread = FaceGazeTracker()
@@ -341,6 +346,7 @@ class GazeReaderApp(QObject):
                 "event": "STOPPED",
                 "timestamp": int(time.time())
             })
+        self.ambient_pill.update_session_state(self.pomodoro_active, self.study_time_left, self.pomodoro_phase)
 
     def handle_blacklist_update(self):
         # Hot-reload blacklist definitions in check loops
@@ -350,6 +356,8 @@ class GazeReaderApp(QObject):
     def study_clock_tick(self):
         # 1. Process blacklist monitor checks
         is_distracted, detail_reason = hooks.check_is_distracted_active(self.dashboard.blacklist_items)
+        
+        self.ambient_pill.update_session_state(self.pomodoro_active, self.study_time_left, self.pomodoro_phase)
         
         if self.pomodoro_active:
             # Handle Pomodoro countdown
