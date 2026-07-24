@@ -1,147 +1,358 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal"
-    android:background="#0b0f19">
+    android:background="#0b0f19"
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="👁️ GazeReader Mobile"
-        android:textColor="#6366f1"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp" />
-
-    <!-- LIVE SESSION STATUS CARD -->
     <LinearLayout
-        android:id="@+id/cardSessionStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:background="@android:drawable/dialog_holo_dark_frame"
-        android:gravity="center"
-        android:layout_marginBottom="20dp">
+        android:padding="20dp"
+        android:gravity="center_horizontal">
 
+        <!-- HEADER -->
         <TextView
-            android:id="@+id/tvFirebaseSync"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔥 Firebase Cloud: Synced"
-            android:textColor="#10b981"
+            android:text="👁️ GazeReader Mobile"
+            android:textColor="#6366f1"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp" />
+
+        <!-- LIVE SESSION STATUS CARD -->
+        <LinearLayout
+            android:id="@+id/cardSessionStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:background="@android:drawable/dialog_holo_dark_frame"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tvFirebaseSync"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥 Firebase Cloud: Synced"
+                android:textColor="#10b981"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvSessionPhase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="STANDBY"
+                android:textColor="#f8fafc"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="2dp" />
+
+            <TextView
+                android:id="@+id/tvSessionTimer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--:--"
+                android:textColor="#94a3b8"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btnStopAlarm"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:text="🔕 Stop Alarm Ringing"
+                android:textColor="#ffffff"
+                android:backgroundTint="#ef4444"
+                android:textSize="12sp"
+                android:visibility="gone"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- ANALYTICS SECTION TITLE & TAB SWITCHER -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="📈 STUDY ANALYTICS"
+                android:textColor="#cbd5e1"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:orientation="horizontal"
+                android:background="@android:drawable/dialog_holo_dark_frame"
+                android:padding="2dp">
+
+                <Button
+                    android:id="@+id/btnTabDay"
+                    android:layout_width="60dp"
+                    android:layout_height="match_parent"
+                    android:text="Day"
+                    android:textColor="#ffffff"
+                    android:textSize="11sp"
+                    android:backgroundTint="#6366f1"
+                    android:padding="0dp" />
+
+                <Button
+                    android:id="@+id/btnTabWeek"
+                    android:layout_width="60dp"
+                    android:layout_height="match_parent"
+                    android:text="Week"
+                    android:textColor="#94a3b8"
+                    android:textSize="11sp"
+                    android:backgroundTint="#1e293b"
+                    android:padding="0dp" />
+
+                <Button
+                    android:id="@+id/btnTabMonth"
+                    android:layout_width="60dp"
+                    android:layout_height="match_parent"
+                    android:text="Month"
+                    android:textColor="#94a3b8"
+                    android:textSize="11sp"
+                    android:backgroundTint="#1e293b"
+                    android:padding="0dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- JOURNAL METRICS CARDS -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <!-- FOCUSED -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="10dp"
+                android:background="@android:drawable/dialog_holo_dark_frame"
+                android:gravity="center"
+                android:layout_marginEnd="4dp">
+                <TextView
+                    android:id="@+id/tvActiveMin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0m"
+                    android:textColor="#6366f1"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Focused"
+                    android:textColor="#64748b"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- DISTRACTED -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="10dp"
+                android:background="@android:drawable/dialog_holo_dark_frame"
+                android:gravity="center"
+                android:layout_marginEnd="4dp">
+                <TextView
+                    android:id="@+id/tvDistractedMin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0m"
+                    android:textColor="#f43f5e"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Distracted"
+                    android:textColor="#64748b"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- EFFICIENCY -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="10dp"
+                android:background="@android:drawable/dialog_holo_dark_frame"
+                android:gravity="center">
+                <TextView
+                    android:id="@+id/tvEfficiency"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="100%"
+                    android:textColor="#10b981"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Efficiency"
+                    android:textColor="#64748b"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- QUEST NOTICE BANNER -->
+        <TextView
+            android:id="@+id/tvQuestNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Quest status: Focus for 9h 00m more today to reach your 9h target! 🎯"
+            android:textColor="#6366f1"
             android:textSize="12sp"
+            android:padding="10dp"
+            android:background="@android:drawable/dialog_holo_dark_frame"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- DAY VIEW: FOCUS TARGET CIRCLE RING -->
+        <com.gazereader.sensor.MobileFocusCircleView
+            android:id="@+id/focusCircleView"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- WEEK / MONTH VIEW: MPANDROIDCHART BAR CHART -->
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/barChart"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <!-- DISTRACTION BREAKDOWN DONUT CHART CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:background="@android:drawable/dialog_holo_dark_frame"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📊 DISTRACTION BREAKDOWN"
+                android:textColor="#cbd5e1"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/pieChart"
+                android:layout_width="match_parent"
+                android:layout_height="180dp" />
+        </LinearLayout>
+
+        <!-- SENSOR SETTINGS SECTION -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚙️ SENSOR SETTINGS &amp; CONNECTION"
+            android:textColor="#cbd5e1"
+            android:textSize="13sp"
             android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:layout_marginBottom="12dp" />
 
         <TextView
-            android:id="@+id/tvSessionPhase"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="STANDBY"
+            android:text="Laptop IP Address (Local Pings)"
+            android:textColor="#94a3b8"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etIp"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:hint="e.g. 192.168.1.15"
             android:textColor="#f8fafc"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:textColorHint="#475569"
+            android:inputType="phone"
+            android:background="@android:drawable/editbox_background_normal"
+            android:padding="8dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Laptop Port"
+            android:textColor="#94a3b8"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etPort"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:hint="5001"
+            android:textColor="#f8fafc"
+            android:textColorHint="#475569"
+            android:inputType="number"
+            android:background="@android:drawable/editbox_background_normal"
+            android:padding="8dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Motion Threshold (Sensitivity)"
+            android:textColor="#94a3b8"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp" />
+
+        <SeekBar
+            android:id="@+id/sbSensitivity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="50"
+            android:progress="20"
             android:layout_marginBottom="4dp" />
 
         <TextView
-            android:id="@+id/tvSessionTimer"
+            android:id="@+id/tvSensVal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textColor="#94a3b8"
-            android:textSize="16sp" />
+            android:text="2.0 m/s²"
+            android:textColor="#cbd5e1"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
 
         <Button
-            android:id="@+id/btnStopAlarm"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:text="🔕 Stop Alarm Ringing"
+            android:id="@+id/btnToggle"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Start Tracking"
             android:textColor="#ffffff"
-            android:backgroundTint="#ef4444"
-            android:textSize="12sp"
-            android:visibility="gone"
-            android:layout_marginTop="10dp" />
+            android:backgroundTint="#6366f1"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp" />
+
     </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Laptop IP Address (Local Pings)"
-        android:textColor="#94a3b8"
-        android:textSize="14sp"
-        android:layout_marginBottom="6dp" />
-
-    <EditText
-        android:id="@+id/etIp"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:hint="e.g. 192.168.1.15"
-        android:textColor="#f8fafc"
-        android:textColorHint="#475569"
-        android:inputType="phone"
-        android:background="@android:drawable/editbox_background_normal"
-        android:padding="10dp"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Laptop Port"
-        android:textColor="#94a3b8"
-        android:textSize="14sp"
-        android:layout_marginBottom="6dp" />
-
-    <EditText
-        android:id="@+id/etPort"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:hint="5001"
-        android:textColor="#f8fafc"
-        android:textColorHint="#475569"
-        android:inputType="number"
-        android:background="@android:drawable/editbox_background_normal"
-        android:padding="10dp"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Motion Threshold (Sensitivity)"
-        android:textColor="#94a3b8"
-        android:textSize="14sp"
-        android:layout_marginBottom="6dp" />
-
-    <SeekBar
-        android:id="@+id/sbSensitivity"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="50"
-        android:progress="20"
-        android:layout_marginBottom="6dp" />
-
-    <TextView
-        android:id="@+id/tvSensVal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="2.0 m/s²"
-        android:textColor="#cbd5e1"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="24dp" />
-
-    <Button
-        android:id="@+id/btnToggle"
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:text="Start Tracking"
-        android:textColor="#ffffff"
-        android:backgroundTint="#6366f1"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-
-</LinearLayout>
+</ScrollView>

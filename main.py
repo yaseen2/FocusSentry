@@ -38,6 +38,43 @@ def push_firebase_status_async(status_dict):
             pass
     threading.Thread(target=_push, daemon=True).start()
 
+def push_firebase_journal_metrics_async():
+    def _push():
+        try:
+            import urllib.request
+            import json
+            today_active, today_distracted = database.get_today_focus_time()
+            weekly = database.get_7_day_history()
+            monthly = database.get_monthly_history()
+            distractions = database.get_top_distractions()
+            
+            efficiency = round((today_active / (today_active + today_distracted)) * 100) if (today_active + today_distracted) > 0 else 100
+            
+            payload = {
+                "today": {
+                    "active_seconds": today_active,
+                    "distracted_seconds": today_distracted,
+                    "target_seconds": 9 * 3600,
+                    "efficiency": efficiency,
+                    "last_updated": int(time.time())
+                },
+                "weekly": weekly,
+                "monthly": monthly,
+                "distractions": distractions
+            }
+            
+            data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                "https://gazereader-default-rtdb.firebaseio.com/journal.json",
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="PUT"
+            )
+            urllib.request.urlopen(req, timeout=4)
+        except Exception as e:
+            pass
+    threading.Thread(target=_push, daemon=True).start()
+
 class PhoneSensorHTTPHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return  # Suppress logging console output to keep stdout clean
@@ -240,6 +277,9 @@ class GazeReaderApp(QObject):
                     "event": "TICK",
                     "timestamp": int(time.time())
                 })
+
+            if self.study_time_left % 10 == 0:
+                push_firebase_journal_metrics_async()
             
             if self.study_time_left <= 0:
                 self.transition_pomodoro_phase()
@@ -439,6 +479,7 @@ class GazeReaderApp(QObject):
         self.active_study_seconds = 0
         self.distracted_study_seconds = 0
         self.dashboard.update_journal_metrics()
+        push_firebase_journal_metrics_async()
 
     def calibrate_center_baseline(self):
         # Read current head pose angles and store them as offsets
