@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, 
     QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QRect
+from PyQt6.QtCore import Qt, pyqtSignal, QRect, QTimer
 from PyQt6.QtGui import QFont, QImage, QPixmap, QColor, QPainter, QPen, QBrush
 import ctypes
 from ctypes import wintypes
