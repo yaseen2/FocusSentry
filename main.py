@@ -55,6 +55,26 @@ def push_laptop_ip_config_async():
             pass
     threading.Thread(target=_push, daemon=True).start()
 
+def start_windows_network_change_listener(on_change_callback):
+    def _listen():
+        import ctypes
+        import ctypes.wintypes
+        iphlpapi = ctypes.windll.iphlpapi
+        handle = ctypes.wintypes.HANDLE()
+        overlapped = ctypes.wintypes.OVERLAPPED()
+        while True:
+            try:
+                ret = iphlpapi.NotifyAddrChange(ctypes.byref(handle), ctypes.byref(overlapped))
+                if ret == 0 or ret == 997: # ERROR_IO_PENDING
+                    ctypes.windll.kernel32.WaitForSingleObject(handle, 0xFFFFFFFF)
+                time.sleep(1.0) # Debounce to allow IP routing assignment
+                on_change_callback()
+            except Exception:
+                time.sleep(5.0)
+
+    t = threading.Thread(target=_listen, daemon=True)
+    t.start()
+
 def push_firebase_status_async(status_dict):
     def _push():
         try:
@@ -189,7 +209,16 @@ class GazeReaderApp(QObject):
             self.dashboard.show()
 
         # Publish local laptop IP configuration to Firebase for automatic phone discovery
+        self.current_laptop_ip = get_local_ip()
         push_laptop_ip_config_async()
+        start_windows_network_change_listener(self.handle_network_change)
+
+    def handle_network_change(self):
+        current_ip = get_local_ip()
+        if getattr(self, 'current_laptop_ip', None) != current_ip:
+            self.current_laptop_ip = current_ip
+            push_laptop_ip_config_async()
+            print(f"⚡ Instant Windows Network Event: New Laptop IP detected ({current_ip})")
 
     def init_screen_overlays(self):
         """Creates transparent PyQt6 overlay widgets for every connected monitor screen."""
