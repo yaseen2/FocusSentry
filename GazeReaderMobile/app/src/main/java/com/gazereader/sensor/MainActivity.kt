@@ -208,6 +208,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 setDrawGridLines(true)
                 gridColor = Color.parseColor("#1e293b")
                 axisMinimum = 0f
+                spaceTop = 25f
                 valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
                     override fun getFormattedValue(value: Float): String {
                         return String.format("%.1fh", value)
@@ -285,7 +286,22 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 val set = BarDataSet(entries, "Study History").apply {
                     colors = listOf(Color.parseColor("#6366f1"), Color.parseColor("#f43f5e"))
                     stackLabels = arrayOf("Focused", "Distracted")
-                    valueTextColor = Color.TRANSPARENT
+                    setDrawValues(true)
+                    valueTextColor = Color.parseColor("#cbd5e1")
+                    valueTextSize = 11f
+                    valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+                        override fun getBarStackedLabel(value: Float, stackedEntry: BarEntry?): String {
+                            if (stackedEntry != null && stackedEntry.yVals != null && stackedEntry.yVals.isNotEmpty()) {
+                                val actH = stackedEntry.yVals[0]
+                                if (Math.abs(value - actH) < 0.01f && actH > 0.05f) {
+                                    val h = actH.toInt()
+                                    val m = ((actH - h) * 60).toInt()
+                                    return if (h > 0) "${h}h ${m}m" else "${m}m"
+                                }
+                            }
+                            return ""
+                        }
+                    }
                 }
 
                 barChart.xAxis.valueFormatter = IndexAxisValueFormatter(xLabels)
