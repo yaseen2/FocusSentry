@@ -134,6 +134,7 @@ class StudyDashboard(QWidget):
     set_center_requested = pyqtSignal()
     resume_suspend_detected = pyqtSignal()
     adapt_hotkey_pressed = pyqtSignal()
+    hotspot_toggle_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
