@@ -20,14 +20,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.charts.BarChart
-import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.data.PieData
-import com.github.mikephil.charting.data.PieDataSet
-import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 
 class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener {
@@ -53,7 +49,6 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     private lateinit var tvQuestNotice: TextView
     private lateinit var focusCircleView: MobileFocusCircleView
     private lateinit var barChart: BarChart
-    private lateinit var pieChart: PieChart
 
     private lateinit var prefs: SharedPreferences
     private lateinit var journalManager: FirebaseJournalManager
@@ -93,7 +88,6 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         tvQuestNotice = findViewById(R.id.tvQuestNotice)
         focusCircleView = findViewById(R.id.focusCircleView)
         barChart = findViewById(R.id.barChart)
-        pieChart = findViewById(R.id.pieChart)
 
         prefs = getSharedPreferences("GazeReaderPrefs", Context.MODE_PRIVATE)
 
@@ -175,7 +169,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     private fun selectTab(tab: String) {
         currentTab = tab
         val activeBg = Color.parseColor("#6366f1")
-        val inactiveBg = Color.parseColor("#1e293b")
+        val inactiveBg = Color.parseColor("#121829")
         val activeTextColor = Color.parseColor("#ffffff")
         val inactiveTextColor = Color.parseColor("#94a3b8")
 
@@ -212,22 +206,6 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 axisMinimum = 0f
             }
             axisRight.isEnabled = false
-        }
-
-        // Configure Donut Pie Chart Style
-        pieChart.apply {
-            description.isEnabled = false
-            isDrawHoleEnabled = true
-            setHoleColor(Color.parseColor("#0b0f19"))
-            setTransparentCircleColor(Color.TRANSPARENT)
-            holeRadius = 55f
-            setEntryLabelColor(Color.WHITE)
-            setEntryLabelTextSize(10f)
-            legend.apply {
-                textColor = Color.parseColor("#cbd5e1")
-                textSize = 10f
-                isWordWrapEnabled = true
-            }
         }
     }
 
@@ -301,35 +279,8 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 barChart.xAxis.valueFormatter = IndexAxisValueFormatter(xLabels)
                 barChart.data = BarData(set)
                 barChart.invalidate()
-                barChart.animateY(600)
+                barChart.animateY(500)
             }
-        }
-
-        // Render Distraction Donut Chart
-        val pieEntries = mutableListOf<PieEntry>()
-        val colors = listOf(
-            Color.parseColor("#6366f1"),
-            Color.parseColor("#f43f5e"),
-            Color.parseColor("#f59e0b"),
-            Color.parseColor("#10b981"),
-            Color.parseColor("#8b5cf6")
-        )
-
-        for (d in data.distractions) {
-            val label = if (d.domain_or_app.length > 20) d.domain_or_app.substring(0, 18) + ".." else d.domain_or_app
-            val min = (d.total_seconds / 60).coerceAtLeast(1)
-            pieEntries.add(PieEntry(min.toFloat(), label))
-        }
-
-        if (pieEntries.isNotEmpty()) {
-            val pieDataSet = PieDataSet(pieEntries, "").apply {
-                this.colors = colors
-                valueTextColor = Color.WHITE
-                valueTextSize = 10f
-            }
-            pieChart.data = PieData(pieDataSet)
-            pieChart.invalidate()
-            pieChart.animateXY(600, 600)
         }
     }
 
@@ -344,7 +295,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     private fun updateSessionUI() {
         val status = SensorService.currentStatus
         if (SensorService.isRunning) {
-            tvFirebaseSync.text = "🔥 Firebase Cloud: Synced"
+            tvFirebaseSync.text = "🔥 Cloud Synced"
             tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
 
             when (status.phase) {
