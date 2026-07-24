@@ -24,11 +24,20 @@ class FirebaseSyncManager {
         fun onLaptopConfigUpdated(ip: String, port: String)
     }
 
+    interface HotspotCommandListener {
+        fun onHotspotCommandReceived(command: String)
+    }
+
     private var listener: SessionListener? = null
     private var configListener: LaptopConfigListener? = null
+    private var hotspotListener: HotspotCommandListener? = null
+
     private var dbListener: ValueEventListener? = null
     private var configDbListener: ValueEventListener? = null
+    private var hotspotDbListener: ValueEventListener? = null
+
     private var lastEvent: String = ""
+    private var lastHotspotTimestamp: Long = 0L
 
     fun startListening(listener: SessionListener) {
         this.listener = listener
@@ -55,9 +64,7 @@ class FirebaseSyncManager {
                     lastEvent = event
                 }
 
-                override fun onCancelled(error: DatabaseError) {
-                    // Ignored or logged
-                }
+                override fun onCancelled(error: DatabaseError) {}
             }
 
             ref.addValueEventListener(dbListener!!)
@@ -93,6 +100,34 @@ class FirebaseSyncManager {
         }
     }
 
+    fun startListeningHotspotCommand(hotspotListener: HotspotCommandListener) {
+        this.hotspotListener = hotspotListener
+        try {
+            val db = FirebaseDatabase.getInstance("https://gazereader-default-rtdb.firebaseio.com")
+            val ref = db.getReference("hotspot_command")
+
+            hotspotDbListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) return
+
+                    val command = snapshot.child("action").getValue(String::class.java) ?: ""
+                    val timestamp = snapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+
+                    if (command.isNotEmpty() && timestamp > lastHotspotTimestamp) {
+                        lastHotspotTimestamp = timestamp
+                        hotspotListener.onHotspotCommandReceived(command)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            }
+
+            ref.addValueEventListener(hotspotDbListener!!)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun stopListening() {
         try {
             val db = FirebaseDatabase.getInstance("https://gazereader-default-rtdb.firebaseio.com")
@@ -103,6 +138,10 @@ class FirebaseSyncManager {
             if (configDbListener != null) {
                 db.getReference("laptop_config").removeEventListener(configDbListener!!)
                 configDbListener = null
+            }
+            if (hotspotDbListener != null) {
+                db.getReference("hotspot_command").removeEventListener(hotspotDbListener!!)
+                hotspotDbListener = null
             }
         } catch (e: Exception) {
             e.printStackTrace()

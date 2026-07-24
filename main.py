@@ -55,6 +55,27 @@ def push_laptop_ip_config_async():
             pass
     threading.Thread(target=_push, daemon=True).start()
 
+def push_firebase_hotspot_command_async(action="ENABLE"):
+    def _push():
+        try:
+            import urllib.request
+            import json
+            payload = {
+                "action": action,
+                "timestamp": int(time.time() * 1000)
+            }
+            data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                "https://gazereader-default-rtdb.firebaseio.com/hotspot_command.json",
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="PUT"
+            )
+            urllib.request.urlopen(req, timeout=3)
+        except Exception as e:
+            print("Failed to push hotspot command to Firebase:", e)
+    threading.Thread(target=_push, daemon=True).start()
+
 def start_windows_network_change_listener(on_change_callback):
     def _listen():
         import ctypes
@@ -199,6 +220,17 @@ class GazeReaderApp(QObject):
         self.dashboard.set_center_requested.connect(self.calibrate_center_baseline)
         self.dashboard.resume_suspend_detected.connect(self.run_adb_reverse)
         self.dashboard.adapt_hotkey_pressed.connect(self.dismiss_lock_state)
+        self.dashboard.hotspot_toggle_requested.connect(self.trigger_mobile_hotspot_toggle)
+
+    def trigger_mobile_hotspot_toggle(self):
+        push_firebase_hotspot_command_async("ENABLE")
+        # Native toast alert on PC dashboard
+        self.tray_icon.showMessage(
+            "GazeReader - Hotspot Triggered",
+            "Remote hotspot enable signal sent to Pixel 6 Pro via Firebase!",
+            QSystemTrayIcon.MessageIcon.Information,
+            3000
+        )
         
         # Bind overlays back resume actions
         for ov in self.overlays:

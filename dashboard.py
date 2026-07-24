@@ -263,8 +263,29 @@ class StudyDashboard(QWidget):
             padding: 4px 10px;
             font-weight: 800;
         """)
+
+        self.btn_hotspot = QPushButton("🔥 Enable Mobile Hotspot", self)
+        self.btn_hotspot.setFont(QFont("Outfit", 9, QFont.Weight.Bold))
+        self.btn_hotspot.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_hotspot.setStyleSheet("""
+            QPushButton {
+                background: rgba(234, 88, 12, 0.15);
+                color: #f97316;
+                border: 1px solid rgba(249, 115, 22, 0.4);
+                border-radius: 6px;
+                padding: 6px 14px;
+                font-weight: 700;
+            }
+            QPushButton:hover {
+                background: rgba(234, 88, 12, 0.3);
+                color: #ff8c00;
+            }
+        """)
+        self.btn_hotspot.clicked.connect(lambda: self.hotspot_toggle_requested.emit())
+
         header_layout.addWidget(logo_lbl)
         header_layout.addStretch()
+        header_layout.addWidget(self.btn_hotspot)
         header_layout.addWidget(badge_lbl)
         outer_layout.addLayout(header_layout)
 
