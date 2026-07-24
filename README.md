@@ -1,4 +1,4 @@
-# 👁️ FocusSentry (GazeReader)
+# FocusSentry (GazeReader)
 ### AI-Powered Gaze Tracking, Mobile Motion Guard & Cloud Analytics System
 
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -9,38 +9,38 @@
 
 ---
 
-**FocusSentry** (also known as **GazeReader**) is an advanced, real-time productivity ecosystem that pairs an AI-powered computer vision agent on Windows with a Kotlin companion app on Android. 
+FocusSentry (GazeReader) is a productivity system that pairs an AI-powered computer vision agent on Windows with a Kotlin companion app on Android.
 
-By combining MediaPipe facial gaze tracking, real-time desktop app hooks, physical phone motion sensors, and Firebase Cloud Synchronization, FocusSentry protects your focus sessions, alerts you to distractions, and provides deep visual analytics of your study habits.
+By combining MediaPipe facial gaze tracking, real-time desktop application monitoring, physical phone motion sensors, and Firebase Cloud Synchronization, FocusSentry protects study sessions, alerts to distractions, and provides analytics of study habits.
 
 ---
 
-## ✨ Key System Features
+## Key System Features
 
-### 👁️ 1. Computer Vision & Gaze Tracking Agent (Desktop)
+### 1. Computer Vision & Gaze Tracking Agent (Desktop)
 * **MediaPipe FaceMesh Tracking**: Real-time 3D head pose estimation monitoring Yaw (horizontal look-away) and Pitch (vertical look-away) angles.
-* **Eye-Rolling & Glance Detection**: Extracted pupil ratios monitor horizontal glances, triggering instant warnings if you look to the side.
-* **Adaptive Posture Drift Tracker**: Automatically tares and re-centers baseline coordinates as you lean or adjust your chair posture, preventing false-positive warnings while typing.
-* **Process & App Blacklist Guard**: Monitors active Windows application titles and locks the system if forbidden apps/websites (e.g. social media, entertainment) are opened.
-* **Multi-Monitor Lockout Overlays**: Spawns transparent, high-contrast lockout overlays across all connected monitors when focus is broken.
+* **Eye-Rolling & Glance Detection**: Extracted pupil ratios monitor horizontal glances, triggering warnings if looking away from the screen.
+* **Adaptive Posture Drift Tracker**: Automatically tares and re-centers baseline coordinates as you shift posture, preventing false-positive warnings while typing.
+* **Process & App Blacklist Guard**: Monitors active Windows application titles and locks the system if forbidden apps or websites (e.g. social media, entertainment) are opened.
+* **Multi-Monitor Lockout Overlays**: Displays transparent lockout overlays across all connected monitors when focus is broken.
 
-### 📱 2. Android Mobile Companion App (`GazeReaderMobile`)
-* **Physical Phone Pickup Detector**: Hardware accelerometer monitoring detects physical phone movement during study sessions, sending an instant `<10ms` local ping to lock the desktop if you touch your phone.
-* **Hero 9-Hour Focus Target Ring**: Vector-painted custom canvas target ring (`MobileFocusCircleView`) displaying your active study percentage (`52%`), daily focus duration (`4h 42m / 9h`), and glowing status badges (`● ON TARGET TODAY` / `QUEST COMPLETED 🏆`).
-* **High-Priority Break Alarm**: Synchronizes Pomodoro break timers over Firebase. When a break ends, your phone triggers a high-priority alarm notification with ringtone audio (`TYPE_ALARM`), vibrating pattern, and smart accelerometer auto-pause.
-* **All-Time Horizontally Scrollable Analytics**: Stacked bar charts (using MPAndroidChart) for 7-day Weekly and All-Time Monthly study trends. Features:
-  * **Hour-Based Y-Axis**: Clear tick marks in hours (`0.0h`, `2.0h`, `4.0h`, `6.0h`, `8.0h`, `10.0h`).
-  * **Direct Value Labels**: Focused duration (`4h 30m`, `7h 15m`) rendered directly above each daily bar.
-  * **9-Hour Green Dashed Goal Line**: Emerald green horizontal dashed benchmark (`🎯 9h Goal`) across the chart.
-  * **Infinite Horizontal Swipe**: Swipe left back in time through all historical study logs without losing past progress.
+### 2. Android Mobile Companion App (GazeReaderMobile)
+* **Physical Phone Pickup Detector**: Accelerometer monitoring detects phone movement during study sessions, sending a fast (<10ms) local ping to lock the desktop if the phone is picked up.
+* **Hero 9-Hour Focus Target Ring**: Custom canvas target ring displaying active study percentage, daily focus duration, and target completion status badges.
+* **High-Priority Break Alarm**: Synchronizes Pomodoro break timers over Firebase. When a break ends, the phone triggers a high-priority alarm notification with ringtone audio, vibration, and automatic sensor pause.
+* **All-Time Horizontally Scrollable Analytics**: Stacked bar charts for 7-day Weekly and All-Time Monthly study trends:
+  * **Hour-Based Y-Axis**: Tick marks in hours (0.0h, 2.0h, 4.0h, 6.0h, 8.0h, 10.0h).
+  * **Direct Value Labels**: Focused duration (e.g. 4h 30m, 7h 15m) rendered directly above each daily bar.
+  * **9-Hour Green Dashed Goal Line**: Emerald green horizontal dashed benchmark across the chart.
+  * **Infinite Horizontal Swipe**: Swipe left through all historical study logs without losing past progress.
 
-### ⚡ 3. Automatic Laptop IP Discovery & Win32 Event Listener
-* **Zero Manual Typing**: Whenever your laptop starts or connects to a Wi-Fi/Hotspot network, it automatically detects its active IPv4 address and publishes it to Firebase (`/laptop_config`). Your Android app automatically syncs to it in real time!
-* **Native Windows Event Listener (`NotifyAddrChange`)**: Uses Win32 API network change events to detect Wi-Fi network switches in 0 milliseconds and re-publish updated IP targets instantly.
+### 3. Automatic Laptop IP Discovery & Win32 Event Listener
+* **Automatic Discovery**: When the laptop connects to a Wi-Fi or Hotspot network, it detects its active IPv4 address and publishes it to Firebase. The Android app syncs to it automatically.
+* **Native Windows Event Listener (NotifyAddrChange)**: Uses Win32 API network change events to detect Wi-Fi network switches and re-publish updated IP targets instantly.
 
 ---
 
-## 🛠️ System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
@@ -62,13 +62,13 @@ graph TD
 
 ---
 
-## ⚙️ Installation & Setup Guide
+## Installation & Setup Guide
 
 ### 1. Windows Desktop App Setup
 
 #### Requirements
-* Python 3.9+ installed on Windows 10/11.
-* Standard built-in or USB webcam.
+* Python 3.9+ on Windows 10/11.
+* Standard webcam.
 
 #### Steps
 1. Clone the repository:
@@ -87,53 +87,53 @@ graph TD
 
 ---
 
-### 2. Android Mobile App Setup (`GazeReaderMobile`)
+### 2. Android Mobile App Setup (GazeReaderMobile)
 
 #### Requirements
 * Android device running Android 8.0+ (SDK 26+).
-* Android Studio (for compilation).
+* Android Studio.
 
 #### Steps
-1. Open the `GazeReaderMobile/` directory in **Android Studio**.
-2. Connect your Android phone via USB with **USB Debugging** enabled.
+1. Open `GazeReaderMobile/` directory in Android Studio.
+2. Connect Android phone via USB with USB Debugging enabled.
 3. Build and install the APK to your phone:
    ```powershell
    gradlew assembleDebug
    adb install -r app/build/outputs/apk/debug/app-debug.apk
    ```
-4. Open **GazeReader Mobile** on your phone.
-5. Turn on **Mobile Hotspot** or connect your phone and laptop to the same Wi-Fi network.
-6. The app will automatically sync your laptop's IP via Firebase and begin tracking!
+4. Open GazeReader Mobile on your phone.
+5. Turn on Mobile Hotspot or connect your phone and laptop to the same Wi-Fi network.
+6. The app automatically syncs your laptop's IP via Firebase and begins tracking.
 
 ---
 
-## 📖 How to Use
+## How to Use
 
-1. **Set Baseline Pose**: Look directly at your screen and click `🎯 Set Center` (or press **`Ctrl + Alt + A`**).
+1. **Set Baseline Pose**: Look directly at your screen and click `Set Center` (or press `Ctrl + Alt + A`).
 2. **Configure Settings**: Adjust Yaw/Pitch angles, warning countdown delays, and motion sensitivity.
 3. **Set Blacklist**: Add forbidden website keywords or app names (e.g. `facebook`, `reddit`, `steam`).
-4. **Start Session**: Click `Start Pomodoro` (or press **`Ctrl + Alt + P`**) to start your 50-minute focus timer.
-5. **Track Progress**: Open **GazeReader Mobile** on your phone to watch your 9-hour target ring, daily focus totals, and monthly trends update in real time.
+4. **Start Session**: Click `Start Pomodoro` (or press `Ctrl + Alt + P`) to start a 50-minute focus timer.
+5. **Track Progress**: Open GazeReader Mobile on your phone to view the 9-hour target ring, daily focus totals, and monthly trends updating in real time.
 
 ---
 
-## ⌨️ Global Hotkeys
+## Global Hotkeys
 
 | Hotkey | Action |
 | :--- | :--- |
-| **`Ctrl + Alt + P`** | Toggle Pomodoro Focus Session (Start / Pause) |
-| **`Ctrl + Alt + A`** | Adapt Baseline Gaze Center Pose |
+| **Ctrl + Alt + P** | Toggle Pomodoro Focus Session (Start / Pause) |
+| **Ctrl + Alt + A** | Adapt Baseline Gaze Center Pose |
 
 ---
 
-## 🛡️ License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## ☕ Support My Work
+## Support
 
-If FocusSentry helped you stay focused, eliminate phone distractions, and achieve your daily study goals, consider supporting its development!
+If FocusSentry helped you stay focused, eliminate phone distractions, and achieve your study goals, consider supporting its development:
 
 [![Support on Gumroad](https://img.shields.io/badge/Support%20on%20Gumroad-Donate-FF90E8?style=for-the-badge&logo=gumroad)](https://waziryaseen.gumroad.com/coffee)
