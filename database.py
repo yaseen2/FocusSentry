@@ -221,7 +221,6 @@ def get_daily_hourly_history():
 def get_monthly_history():
     conn = get_db_connection()
     cursor = conn.cursor()
-    thirty_days_ago = int(time.time()) - 30 * 24 * 3600
     cursor.execute("""
         SELECT 
             strftime('%m-%d', datetime(timestamp, 'unixepoch', 'localtime')) as day,
@@ -229,13 +228,12 @@ def get_monthly_history():
             SUM(distracted_seconds) as distracted_seconds,
             MAX(timestamp) as max_ts
         FROM study_sessions
-        WHERE timestamp > ?
         GROUP BY day
-        ORDER BY max_ts DESC LIMIT 30
-    """, (thirty_days_ago,))
+        ORDER BY max_ts ASC
+    """)
     rows = cursor.fetchall()
     conn.close()
-    return list(reversed([dict(r) for r in rows]))
+    return [dict(r) for r in rows]
 
 def get_today_focus_time():
     conn = get_db_connection()

@@ -193,6 +193,10 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             setDrawGridBackground(false)
             setDrawBarShadow(false)
             setTouchEnabled(true)
+            isDragEnabled = true
+            isScaleXEnabled = true
+            isScaleYEnabled = false
+            setPinchZoom(false)
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 textColor = Color.parseColor("#94a3b8")
@@ -278,6 +282,8 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
                 barChart.xAxis.valueFormatter = IndexAxisValueFormatter(xLabels)
                 barChart.data = BarData(set)
+                barChart.setVisibleXRangeMaximum(7f)
+                barChart.moveViewToX((entries.size - 1).toFloat())
                 barChart.invalidate()
                 barChart.animateY(500)
             }

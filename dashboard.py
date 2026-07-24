@@ -974,6 +974,8 @@ class StudyDashboard(QWidget):
                 s = e["active_seconds"] + e["distracted_seconds"]
                 if s > max_val: max_val = s
 
+            self.chart_frame.setMinimumWidth(max(240, len(history) * 52))
+
             for entry in history:
                 bar_col = QFrame(self.chart_frame)
                 bar_col.setFixedWidth(42)
@@ -1010,6 +1012,8 @@ class StudyDashboard(QWidget):
                 col_layout.addWidget(day_label)
                 
                 self.chart_layout.addWidget(bar_col)
+
+        QTimer.singleShot(100, lambda: self.chart_scroll.horizontalScrollBar().setValue(self.chart_scroll.horizontalScrollBar().maximum()))
             
         self.update_distraction_breakdown()
 
