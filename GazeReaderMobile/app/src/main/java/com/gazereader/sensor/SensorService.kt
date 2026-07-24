@@ -21,7 +21,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.abs
 
-class SensorService : Service(), SensorEventListener, FirebaseSyncManager.SessionListener {
+class SensorService : Service(), SensorEventListener, FirebaseSyncManager.SessionListener, FirebaseSyncManager.LaptopConfigListener {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
@@ -61,6 +61,7 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
         breakAlarmHelper = BreakAlarmHelper(this)
         firebaseSync = FirebaseSyncManager()
         firebaseSync.startListening(this)
+        firebaseSync.startListeningConfig(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -69,9 +70,10 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
             return START_NOT_STICKY
         }
 
-        ip = intent?.getStringExtra("ip") ?: "192.168.1.100"
-        port = intent?.getStringExtra("port") ?: "5001"
-        sensitivity = intent?.getFloatExtra("sensitivity", 2.0f) ?: 2.0f
+        val prefs = getSharedPreferences("GazeReaderPrefs", Context.MODE_PRIVATE)
+        ip = intent?.getStringExtra("ip") ?: prefs.getString("laptop_ip", "192.168.1.100") ?: "192.168.1.100"
+        port = intent?.getStringExtra("port") ?: prefs.getString("laptop_port", "5001") ?: "5001"
+        sensitivity = intent?.getFloatExtra("sensitivity", 2.0f) ?: prefs.getFloat("sensitivity", 2.0f)
 
         createNotificationChannel()
         val notification = createNotification()
@@ -80,6 +82,21 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
         registerAccelerometer()
 
         return START_NOT_STICKY
+    }
+
+    override fun onLaptopConfigUpdated(ip: String, port: String) {
+        if (ip.isNotEmpty()) {
+            this.ip = ip
+            if (port.isNotEmpty()) {
+                this.port = port
+            }
+            val prefs = getSharedPreferences("GazeReaderPrefs", Context.MODE_PRIVATE)
+            prefs.edit().apply {
+                putString("laptop_ip", ip)
+                putString("laptop_port", port)
+                apply()
+            }
+        }
     }
 
     private fun registerAccelerometer() {
