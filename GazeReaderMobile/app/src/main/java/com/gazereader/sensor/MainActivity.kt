@@ -208,6 +208,11 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 setDrawGridLines(true)
                 gridColor = Color.parseColor("#1e293b")
                 axisMinimum = 0f
+                valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+                    override fun getFormattedValue(value: Float): String {
+                        return String.format("%.1fh", value)
+                    }
+                }
             }
             axisRight.isEnabled = false
         }
@@ -227,11 +232,11 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             barChart.visibility = View.GONE
 
             val today = data.today
-            val activeMin = today.active_seconds / 60
-            val distMin = today.distracted_seconds / 60
+            val actStr = if (today.active_seconds >= 3600) "${today.active_seconds / 3600}h ${(today.active_seconds % 3600) / 60}m" else "${today.active_seconds / 60}m"
+            val distStr = if (today.distracted_seconds >= 3600) "${today.distracted_seconds / 3600}h ${(today.distracted_seconds % 3600) / 60}m" else "${today.distracted_seconds / 60}m"
 
-            tvActiveMin.text = "${activeMin}m"
-            tvDistractedMin.text = "${distMin}m"
+            tvActiveMin.text = actStr
+            tvDistractedMin.text = distStr
             tvEfficiency.text = "${today.efficiency}%"
 
             focusCircleView.setProgress(today.active_seconds, today.target_seconds)
@@ -262,15 +267,18 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 val e = history[i]
                 totalAct += e.active_seconds
                 totalDist += e.distracted_seconds
-                val actMin = (e.active_seconds / 60).toFloat()
-                val distMin = (e.distracted_seconds / 60).toFloat()
-                entries.add(BarEntry(i.toFloat(), floatArrayOf(actMin, distMin)))
+                val actH = (e.active_seconds / 3600.0f)
+                val distH = (e.distracted_seconds / 3600.0f)
+                entries.add(BarEntry(i.toFloat(), floatArrayOf(actH, distH)))
                 xLabels.add(e.day)
             }
 
             val overallEfficiency = if (totalAct + totalDist > 0) ((totalAct.toDouble() / (totalAct + totalDist)) * 100).toInt() else 100
-            tvActiveMin.text = "${totalAct / 60}m"
-            tvDistractedMin.text = "${totalDist / 60}m"
+            val totActStr = if (totalAct >= 3600) "${totalAct / 3600}h ${(totalAct % 3600) / 60}m" else "${totalAct / 60}m"
+            val totDistStr = if (totalDist >= 3600) "${totalDist / 3600}h ${(totalDist % 3600) / 60}m" else "${totalDist / 60}m"
+
+            tvActiveMin.text = totActStr
+            tvDistractedMin.text = totDistStr
             tvEfficiency.text = "$overallEfficiency%"
 
             if (entries.isNotEmpty()) {

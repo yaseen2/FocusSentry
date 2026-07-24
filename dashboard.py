@@ -916,12 +916,12 @@ class StudyDashboard(QWidget):
             total_active = sum(entry["active_seconds"] for entry in history)
             total_distracted = sum(entry["distracted_seconds"] for entry in history)
             
-        active_min = round(total_active / 60)
-        distracted_min = round(total_distracted / 60)
+        act_h_str = f"{total_active // 3600}h {(total_active % 3600) // 60}m" if total_active >= 3600 else f"{round(total_active / 60)}m"
+        dist_h_str = f"{total_distracted // 3600}h {(total_distracted % 3600) // 60}m" if total_distracted >= 3600 else f"{round(total_distracted / 60)}m"
         efficiency = round((total_active / (total_active + total_distracted)) * 100) if (total_active + total_distracted) > 0 else 100
 
-        self.lbl_j_active.setText(f"{active_min}m")
-        self.lbl_j_distracted.setText(f"{distracted_min}m")
+        self.lbl_j_active.setText(act_h_str)
+        self.lbl_j_distracted.setText(dist_h_str)
         self.lbl_j_ratio.setText(f"{efficiency}%")
 
         if self.current_filter_mode == "DAY":
@@ -990,17 +990,20 @@ class StudyDashboard(QWidget):
                 act_h = max(2, int((entry["active_seconds"] / max_val) * 110))
                 dist_h = max(2, int((entry["distracted_seconds"] / max_val) * 110))
 
+                e_act_str = f"{entry['active_seconds'] // 3600}h {(entry['active_seconds'] % 3600) // 60}m" if entry['active_seconds'] >= 3600 else f"{round(entry['active_seconds']/60)}m"
+                e_dist_str = f"{entry['distracted_seconds'] // 3600}h {(entry['distracted_seconds'] % 3600) // 60}m" if entry['distracted_seconds'] >= 3600 else f"{round(entry['distracted_seconds']/60)}m"
+
                 f_dist = QFrame(bar_col)
                 f_dist.setFixedHeight(dist_h)
                 f_dist.setFixedWidth(24)
                 f_dist.setStyleSheet("background-color: #f43f5e; border-radius: 3px;")
-                f_dist.setToolTip(f"Distracted: {round(entry['distracted_seconds']/60)}m")
+                f_dist.setToolTip(f"Distracted: {e_dist_str}")
                 
                 f_act = QFrame(bar_col)
                 f_act.setFixedHeight(act_h)
                 f_act.setFixedWidth(24)
                 f_act.setStyleSheet("background-color: #6366f1; border-radius: 3px;")
-                f_act.setToolTip(f"Focused: {round(entry['active_seconds']/60)}m")
+                f_act.setToolTip(f"Focused: {e_act_str}")
 
                 col_layout.addWidget(f_dist, 0, Qt.AlignmentFlag.AlignHCenter)
                 col_layout.addWidget(f_act, 0, Qt.AlignmentFlag.AlignHCenter)
