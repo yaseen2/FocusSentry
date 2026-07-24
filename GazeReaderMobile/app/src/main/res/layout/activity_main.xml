@@ -14,13 +14,64 @@
         android:textColor="#6366f1"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="30dp" />
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- LIVE SESSION STATUS CARD -->
+    <LinearLayout
+        android:id="@+id/cardSessionStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@android:drawable/dialog_holo_dark_frame"
+        android:gravity="center"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/tvFirebaseSync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔥 Firebase Cloud: Synced"
+            android:textColor="#10b981"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:id="@+id/tvSessionPhase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="STANDBY"
+            android:textColor="#f8fafc"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvSessionTimer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--"
+            android:textColor="#94a3b8"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btnStopAlarm"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="🔕 Stop Alarm Ringing"
+            android:textColor="#ffffff"
+            android:backgroundTint="#ef4444"
+            android:textSize="12sp"
+            android:visibility="gone"
+            android:layout_marginTop="10dp" />
+    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Laptop IP Address"
+        android:text="Laptop IP Address (Local Pings)"
         android:textColor="#94a3b8"
         android:textSize="14sp"
         android:layout_marginBottom="6dp" />
@@ -35,7 +86,7 @@
         android:inputType="phone"
         android:background="@android:drawable/editbox_background_normal"
         android:padding="10dp"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:layout_width="match_parent"
@@ -55,7 +106,7 @@
         android:inputType="number"
         android:background="@android:drawable/editbox_background_normal"
         android:padding="10dp"
-        android:layout_marginBottom="25dp" />
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:layout_width="match_parent"
@@ -71,7 +122,7 @@
         android:layout_height="wrap_content"
         android:max="50"
         android:progress="20"
-        android:layout_marginBottom="10dp" />
+        android:layout_marginBottom="6dp" />
 
     <TextView
         android:id="@+id/tvSensVal"
@@ -79,9 +130,9 @@
         android:layout_height="wrap_content"
         android:text="2.0 m/s²"
         android:textColor="#cbd5e1"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="bold"
-        android:layout_marginBottom="40dp" />
+        android:layout_marginBottom="24dp" />
 
     <Button
         android:id="@+id/btnToggle"

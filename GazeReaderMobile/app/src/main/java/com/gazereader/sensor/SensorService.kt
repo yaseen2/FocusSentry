@@ -21,7 +21,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.abs
 
-class SensorService : Service(), SensorEventListener {
+class SensorService : Service(), SensorEventListener, FirebaseSyncManager.SessionListener {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
@@ -37,10 +37,17 @@ class SensorService : Service(), SensorEventListener {
     private var lastPingTime = 0L
 
     private val serviceScope = CoroutineScope(Dispatchers.IO)
+    private lateinit var firebaseSync: FirebaseSyncManager
+    private lateinit var breakAlarmHelper: BreakAlarmHelper
+    private var isBreakActive = false
 
     companion object {
         var isRunning = false
             private set
+        var currentStatus = SessionStatus()
+            private set
+
+        const val ACTION_STOP_ALARM = "com.gazereader.sensor.ACTION_STOP_ALARM"
         private const val CHANNEL_ID = "GazeReaderMobileChannel"
         private const val NOTIFICATION_ID = 88
     }
@@ -50,9 +57,18 @@ class SensorService : Service(), SensorEventListener {
         isRunning = true
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+        breakAlarmHelper = BreakAlarmHelper(this)
+        firebaseSync = FirebaseSyncManager()
+        firebaseSync.startListening(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP_ALARM) {
+            breakAlarmHelper.stopAlarm()
+            return START_NOT_STICKY
+        }
+
         ip = intent?.getStringExtra("ip") ?: "192.168.1.100"
         port = intent?.getStringExtra("port") ?: "5001"
         sensitivity = intent?.getFloatExtra("sensitivity", 2.0f) ?: 2.0f
@@ -61,14 +77,51 @@ class SensorService : Service(), SensorEventListener {
         val notification = createNotification()
         startForeground(NOTIFICATION_ID, notification)
 
-        accelerometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
-        }
+        registerAccelerometer()
 
         return START_NOT_STICKY
     }
 
+    private fun registerAccelerometer() {
+        accelerometer?.let {
+            sensorManager.unregisterListener(this)
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    private fun unregisterAccelerometer() {
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onStatusChanged(status: SessionStatus) {
+        currentStatus = status
+        
+        if (status.phase == "BREAK") {
+            isBreakActive = true
+            // Pause accelerometer during break to avoid false distraction pings
+            unregisterAccelerometer()
+            breakAlarmHelper.updateBreakCountdownNotification(status.time_left)
+        } else {
+            if (isBreakActive && status.phase == "FOCUS") {
+                isBreakActive = false
+                breakAlarmHelper.triggerBreakOverAlarm()
+                registerAccelerometer()
+            } else {
+                isBreakActive = false
+                breakAlarmHelper.clearBreakNotification()
+                registerAccelerometer()
+            }
+        }
+    }
+
+    override fun onBreakEnded() {
+        breakAlarmHelper.triggerBreakOverAlarm()
+        registerAccelerometer()
+    }
+
     override fun onSensorChanged(event: SensorEvent) {
+        if (isBreakActive) return // Skip tracking when on break
+
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
             val x = event.values[0]
             val y = event.values[1]
@@ -112,7 +165,6 @@ class SensorService : Service(), SensorEventListener {
                 val code = conn.responseCode
                 conn.disconnect()
             } catch (e: Exception) {
-                // Network failures are ignored in background logs
                 e.printStackTrace()
             }
         }
@@ -138,8 +190,8 @@ class SensorService : Service(), SensorEventListener {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("GazeReader Sensor Active")
-            .setContentText("Monitoring Pixel phone accelerometer pings...")
+            .setContentTitle("GazeReader Active & Firebase Synced")
+            .setContentText("Monitoring session timers & phone movement...")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setContentIntent(pendingIntent)
             .build()
@@ -147,7 +199,10 @@ class SensorService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        sensorManager.unregisterListener(this)
+        firebaseSync.stopListening()
+        breakAlarmHelper.stopAlarm()
+        breakAlarmHelper.clearBreakNotification()
+        unregisterAccelerometer()
         isRunning = false
     }
 

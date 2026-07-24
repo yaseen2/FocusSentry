@@ -21,6 +21,23 @@ import winsound
 # Thread-safe global event flag for Android mobile pings
 phone_active_event = threading.Event()
 
+def push_firebase_status_async(status_dict):
+    def _push():
+        try:
+            import urllib.request
+            import json
+            data = json.dumps(status_dict).encode('utf-8')
+            req = urllib.request.Request(
+                "https://gazereader-default-rtdb.firebaseio.com/session_status.json",
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="PUT"
+            )
+            urllib.request.urlopen(req, timeout=3)
+        except Exception as e:
+            pass
+    threading.Thread(target=_push, daemon=True).start()
+
 class PhoneSensorHTTPHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return  # Suppress logging console output to keep stdout clean
@@ -177,6 +194,14 @@ class GazeReaderApp(QObject):
             # Start camera tracker thread
             self.tracker_thread.start()
             QTimer.singleShot(2500, self.calibrate_center_baseline)
+            
+            push_firebase_status_async({
+                "active": True,
+                "phase": "FOCUS",
+                "time_left": 50 * 60,
+                "event": "FOCUS_STARTED",
+                "timestamp": int(time.time())
+            })
         else:
             self.pomo_action.setText("🍅 Start Pomodoro")
             self.save_study_session()
@@ -184,6 +209,14 @@ class GazeReaderApp(QObject):
             # Shut down camera to turn off sensor light
             self.tracker_thread.stop()
             self.clear_all_overlays()
+            
+            push_firebase_status_async({
+                "active": False,
+                "phase": "INACTIVE",
+                "time_left": 0,
+                "event": "STOPPED",
+                "timestamp": int(time.time())
+            })
 
     def handle_blacklist_update(self):
         # Hot-reload blacklist definitions in check loops
@@ -198,6 +231,15 @@ class GazeReaderApp(QObject):
             # Handle Pomodoro countdown
             self.study_time_left -= 1
             self.dashboard.update_timer_label(self.study_time_left, self.pomodoro_phase)
+            
+            if self.study_time_left % 5 == 0:
+                push_firebase_status_async({
+                    "active": True,
+                    "phase": self.pomodoro_phase,
+                    "time_left": self.study_time_left,
+                    "event": "TICK",
+                    "timestamp": int(time.time())
+                })
             
             if self.study_time_left <= 0:
                 self.transition_pomodoro_phase()
@@ -361,6 +403,13 @@ class GazeReaderApp(QObject):
                 QSystemTrayIcon.MessageIcon.Information,
                 6000
             )
+            push_firebase_status_async({
+                "active": True,
+                "phase": "BREAK",
+                "time_left": 10 * 60,
+                "event": "BREAK_STARTED",
+                "timestamp": int(time.time())
+            })
         else:
             self.pomodoro_phase = "FOCUS"
             self.study_time_left = 50 * 60 # 50-minute study
@@ -373,6 +422,13 @@ class GazeReaderApp(QObject):
                 QSystemTrayIcon.MessageIcon.Information,
                 6000
             )
+            push_firebase_status_async({
+                "active": True,
+                "phase": "FOCUS",
+                "time_left": 50 * 60,
+                "event": "BREAK_ENDED",
+                "timestamp": int(time.time())
+            })
             
         self.dashboard.update_timer_label(self.study_time_left, self.pomodoro_phase)
 
