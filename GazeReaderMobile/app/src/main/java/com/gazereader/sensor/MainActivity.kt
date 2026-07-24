@@ -186,6 +186,15 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     }
 
     private fun setupChartStyles() {
+        val targetLine = com.github.mikephil.charting.components.LimitLine(9.0f, "9h Goal 🎯").apply {
+            lineWidth = 2f
+            enableDashedLine(12f, 8f, 0f)
+            lineColor = Color.parseColor("#10b981")
+            textColor = Color.parseColor("#34d399")
+            textSize = 10f
+            labelPosition = com.github.mikephil.charting.components.LimitLine.LimitLabelPosition.RIGHT_TOP
+        }
+
         // Configure Bar Chart Style
         barChart.apply {
             description.isEnabled = false
@@ -209,6 +218,9 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 gridColor = Color.parseColor("#1e293b")
                 axisMinimum = 0f
                 spaceTop = 25f
+                removeAllLimitLines()
+                addLimitLine(targetLine)
+                setDrawLimitLinesBehindData(true)
                 valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
                     override fun getFormattedValue(value: Float): String {
                         return String.format("%.1fh", value)
