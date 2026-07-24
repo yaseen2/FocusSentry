@@ -21,7 +21,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.abs
 
-class SensorService : Service(), SensorEventListener, FirebaseSyncManager.SessionListener, FirebaseSyncManager.LaptopConfigListener, FirebaseSyncManager.HotspotCommandListener {
+class SensorService : Service(), SensorEventListener, FirebaseSyncManager.SessionListener, FirebaseSyncManager.LaptopConfigListener {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
@@ -39,7 +39,6 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
     private val serviceScope = CoroutineScope(Dispatchers.IO)
     private lateinit var firebaseSync: FirebaseSyncManager
     private lateinit var breakAlarmHelper: BreakAlarmHelper
-    private lateinit var hotspotHelper: HotspotHelper
     private var isBreakActive = false
 
     companion object {
@@ -60,12 +59,10 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
         breakAlarmHelper = BreakAlarmHelper(this)
-        hotspotHelper = HotspotHelper(this)
 
         firebaseSync = FirebaseSyncManager()
         firebaseSync.startListening(this)
         firebaseSync.startListeningConfig(this)
-        firebaseSync.startListeningHotspotCommand(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -100,13 +97,6 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
                 putString("laptop_port", port)
                 apply()
             }
-        }
-    }
-
-    override fun onHotspotCommandReceived(command: String) {
-        when (command) {
-            "ENABLE", "TOGGLE_ON" -> hotspotHelper.setHotspotEnabled(true)
-            "DISABLE", "TOGGLE_OFF" -> hotspotHelper.setHotspotEnabled(false)
         }
     }
 

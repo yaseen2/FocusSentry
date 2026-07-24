@@ -220,17 +220,6 @@ class GazeReaderApp(QObject):
         self.dashboard.set_center_requested.connect(self.calibrate_center_baseline)
         self.dashboard.resume_suspend_detected.connect(self.run_adb_reverse)
         self.dashboard.adapt_hotkey_pressed.connect(self.dismiss_lock_state)
-        self.dashboard.hotspot_toggle_requested.connect(self.trigger_mobile_hotspot_toggle)
-
-    def trigger_mobile_hotspot_toggle(self):
-        push_firebase_hotspot_command_async("ENABLE")
-        # Native toast alert on PC dashboard
-        self.tray_icon.showMessage(
-            "GazeReader - Hotspot Triggered",
-            "Remote hotspot enable signal sent to Pixel 6 Pro via Firebase!",
-            QSystemTrayIcon.MessageIcon.Information,
-            3000
-        )
         
         # Bind overlays back resume actions
         for ov in self.overlays:
