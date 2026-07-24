@@ -228,7 +228,7 @@ def get_monthly_history():
             SUM(distracted_seconds) as distracted_seconds,
             MAX(timestamp) as max_ts
         FROM study_sessions
-        GROUP BY day
+        GROUP BY date(timestamp, 'unixepoch', 'localtime')
         ORDER BY max_ts ASC
     """)
     rows = cursor.fetchall()
