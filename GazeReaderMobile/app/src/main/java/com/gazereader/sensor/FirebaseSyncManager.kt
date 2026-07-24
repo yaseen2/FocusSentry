@@ -20,8 +20,14 @@ class FirebaseSyncManager {
         fun onBreakEnded()
     }
 
+    interface LaptopConfigListener {
+        fun onLaptopConfigUpdated(ip: String, port: String)
+    }
+
     private var listener: SessionListener? = null
+    private var configListener: LaptopConfigListener? = null
     private var dbListener: ValueEventListener? = null
+    private var configDbListener: ValueEventListener? = null
     private var lastEvent: String = ""
 
     fun startListening(listener: SessionListener) {
@@ -60,12 +66,43 @@ class FirebaseSyncManager {
         }
     }
 
+    fun startListeningConfig(configListener: LaptopConfigListener) {
+        this.configListener = configListener
+        try {
+            val db = FirebaseDatabase.getInstance("https://gazereader-default-rtdb.firebaseio.com")
+            val ref = db.getReference("laptop_config")
+
+            configDbListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) return
+
+                    val ip = snapshot.child("ip").getValue(String::class.java) ?: ""
+                    val port = (snapshot.child("port").getValue(Long::class.java) ?: 5001L).toString()
+
+                    if (ip.isNotEmpty()) {
+                        configListener.onLaptopConfigUpdated(ip, port)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            }
+
+            ref.addValueEventListener(configDbListener!!)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun stopListening() {
         try {
+            val db = FirebaseDatabase.getInstance("https://gazereader-default-rtdb.firebaseio.com")
             if (dbListener != null) {
-                val db = FirebaseDatabase.getInstance("https://gazereader-default-rtdb.firebaseio.com")
                 db.getReference("session_status").removeEventListener(dbListener!!)
                 dbListener = null
+            }
+            if (configDbListener != null) {
+                db.getReference("laptop_config").removeEventListener(configDbListener!!)
+                configDbListener = null
             }
         } catch (e: Exception) {
             e.printStackTrace()

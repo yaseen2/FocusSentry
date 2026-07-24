@@ -21,6 +21,40 @@ import winsound
 # Thread-safe global event flag for Android mobile pings
 phone_active_event = threading.Event()
 
+def get_local_ip():
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+def push_laptop_ip_config_async():
+    def _push():
+        try:
+            import urllib.request
+            import json
+            ip = get_local_ip()
+            payload = {
+                "ip": ip,
+                "port": 5001,
+                "updated_at": int(time.time())
+            }
+            data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                "https://gazereader-default-rtdb.firebaseio.com/laptop_config.json",
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="PUT"
+            )
+            urllib.request.urlopen(req, timeout=3)
+        except Exception:
+            pass
+    threading.Thread(target=_push, daemon=True).start()
+
 def push_firebase_status_async(status_dict):
     def _push():
         try:
@@ -153,6 +187,9 @@ class GazeReaderApp(QObject):
         # Show dashboard initially unless run with --silent flag
         if "--silent" not in sys.argv:
             self.dashboard.show()
+
+        # Publish local laptop IP configuration to Firebase for automatic phone discovery
+        push_laptop_ip_config_async()
 
     def init_screen_overlays(self):
         """Creates transparent PyQt6 overlay widgets for every connected monitor screen."""

@@ -158,6 +158,25 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
         journalManager = FirebaseJournalManager()
         journalManager.startListening(this)
+
+        val syncManager = FirebaseSyncManager()
+        syncManager.startListeningConfig(object : FirebaseSyncManager.LaptopConfigListener {
+            override fun onLaptopConfigUpdated(ip: String, port: String) {
+                runOnUiThread {
+                    val currentIp = etIp.text.toString().trim()
+                    if (currentIp != ip && ip.isNotEmpty()) {
+                        etIp.setText(ip)
+                        etPort.setText(port)
+                        prefs.edit().apply {
+                            putString("laptop_ip", ip)
+                            putString("laptop_port", port)
+                            apply()
+                        }
+                        Toast.makeText(this@MainActivity, "⚡ Auto-Synced Laptop IP: $ip", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        })
     }
 
     private fun setupTabListeners() {
