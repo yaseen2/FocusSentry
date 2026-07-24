@@ -250,7 +250,9 @@ class AmbientStatusPill(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.is_active = False
-        
+        self.pulse_alpha = 180
+        self.pulse_direction = -3
+
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
             Qt.WindowType.WindowStaysOnTopHint |
@@ -259,90 +261,72 @@ class AmbientStatusPill(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip("Click to toggle Pomodoro Session (Ctrl+Alt+P)")
 
-        self.init_ui()
+        # Pulsing timer for glowing red indicator when session is paused
+        self.pulse_timer = QTimer(self)
+        self.pulse_timer.timeout.connect(self._pulse_tick)
+        self.pulse_timer.start(35)
+
         self.position_on_screen()
-
-    def init_ui(self):
-        self.card = QFrame(self)
-        self.card.setStyleSheet("""
-            QFrame {
-                background-color: rgba(15, 23, 42, 0.94);
-                border: 1px solid rgba(245, 158, 11, 0.6);
-                border-radius: 18px;
-            }
-        """)
-        layout = QHBoxLayout(self.card)
-        layout.setContentsMargins(14, 6, 16, 6)
-        layout.setSpacing(10)
-
-        self.lbl_dot = QLabel("⏸️", self.card)
-        self.lbl_dot.setFont(QFont("Segoe UI Emoji", 10))
-
-        self.lbl_status = QLabel("SESSION PAUSED  |  Press Ctrl+Alt+P", self.card)
-        self.lbl_status.setFont(QFont("Outfit", 9, QFont.Weight.Bold))
-        self.lbl_status.setStyleSheet("color: #f59e0b; font-weight: 700;")
-
-        layout.addWidget(self.lbl_dot)
-        layout.addWidget(self.lbl_status)
-
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addWidget(self.card)
 
     def position_on_screen(self):
         primary = QApplication.primaryScreen()
         if primary:
             geom = primary.geometry()
-            w = 330
-            h = 38
-            x = geom.width() - w - 24
-            y = 18
+            w = 28
+            h = 14
+            x = (geom.width() - w) // 2
+            y = 0 # Docked touching top edge of screen
             self.setGeometry(x, y, w, h)
+
+    def _pulse_tick(self):
+        if not self.is_active:
+            self.pulse_alpha += self.pulse_direction
+            if self.pulse_alpha <= 80:
+                self.pulse_alpha = 80
+                self.pulse_direction = 4
+            elif self.pulse_alpha >= 245:
+                self.pulse_alpha = 245
+                self.pulse_direction = -4
+            self.update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.toggle_session_requested.emit()
 
     def update_session_state(self, active, time_left_seconds, phase):
-        self.is_active = active
-        mins = time_left_seconds // 60
-        secs = time_left_seconds % 60
-        time_str = f"{mins:02d}:{secs:02d}"
-
-        if not active:
-            self.lbl_dot.setText("⏸️")
-            self.lbl_status.setText("SESSION PAUSED  |  Press Ctrl+Alt+P")
-            self.lbl_status.setStyleSheet("color: #f59e0b; font-weight: 700;")
-            self.card.setStyleSheet("""
-                QFrame {
-                    background-color: rgba(15, 23, 42, 0.94);
-                    border: 1px solid rgba(245, 158, 11, 0.6);
-                    border-radius: 18px;
-                }
-            """)
-            self.show()
-        else:
-            if phase == "FOCUS":
-                self.lbl_dot.setText("🟢")
-                self.lbl_status.setText(f"FOCUS ACTIVE: {time_str}")
-                self.lbl_status.setStyleSheet("color: #34d399; font-weight: 700;")
-                self.card.setStyleSheet("""
-                    QFrame {
-                        background-color: rgba(6, 78, 59, 0.88);
-                        border: 1px solid rgba(52, 211, 153, 0.5);
-                        border-radius: 18px;
-                    }
-                """)
+        if self.is_active != active:
+            self.is_active = active
+            if active:
+                self.pulse_timer.stop()
             else:
-                self.lbl_dot.setText("☕")
-                self.lbl_status.setText(f"BREAK TIME: {time_str}")
-                self.lbl_status.setStyleSheet("color: #38bdf8; font-weight: 700;")
-                self.card.setStyleSheet("""
-                    QFrame {
-                        background-color: rgba(12, 74, 110, 0.88);
-                        border: 1px solid rgba(56, 189, 248, 0.5);
-                        border-radius: 18px;
-                    }
-                """)
-            self.show()
+                self.pulse_timer.start(35)
+        self.update()
+        self.show()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        w = self.width()
+        h = self.height()
+
+        if self.is_active:
+            # Active Session: Solid Emerald Green Dot with subtle outer ring
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor(16, 185, 129, 60)))
+            painter.drawRoundedRect(0, 0, w, h, 7, 7)
+
+            painter.setBrush(QBrush(QColor(16, 185, 129, 230)))
+            painter.drawRoundedRect(3, 2, w - 6, h - 4, 5, 5)
+        else:
+            # Paused Session: Pulsing Crimson Red Glow Reminder
+            painter.setPen(Qt.PenStyle.NoPen)
+            glow_alpha = max(30, int(self.pulse_alpha * 0.45))
+            painter.setBrush(QBrush(QColor(244, 63, 94, glow_alpha)))
+            painter.drawRoundedRect(0, 0, w, h, 7, 7)
+
+            core_color = QColor(244, 63, 94, self.pulse_alpha)
+            painter.setBrush(QBrush(core_color))
+            painter.drawRoundedRect(3, 2, w - 6, h - 4, 5, 5)
