@@ -317,6 +317,10 @@ class GazeReaderApp(QObject):
 
             if self.study_time_left % 10 == 0:
                 push_firebase_journal_metrics_async()
+                current_ip = get_local_ip()
+                if getattr(self, 'current_laptop_ip', None) != current_ip:
+                    self.current_laptop_ip = current_ip
+                    push_laptop_ip_config_async()
             
             if self.study_time_left <= 0:
                 self.transition_pomodoro_phase()
