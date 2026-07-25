@@ -371,8 +371,9 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             tvFirebaseSync.text = "🔥 Cloud Synced"
             tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
 
-            val elapsedSec = if (lastStatusTimeMs > 0L) ((System.currentTimeMillis() - lastStatusTimeMs) / 1000).toInt() else 0
-            val currentRemaining = maxOf(0, status.time_left - elapsedSec)
+            val nowSec = System.currentTimeMillis() / 1000L
+            val elapsedSec = if (status.start_timestamp > 0L) maxOf(0L, nowSec - status.start_timestamp).toInt() else 0
+            val currentRemaining = maxOf(0, status.duration - elapsedSec)
 
             when (status.phase) {
                 "FOCUS" -> {

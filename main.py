@@ -327,9 +327,9 @@ class GazeReaderApp(QObject):
             push_firebase_status_async({
                 "active": True,
                 "phase": "FOCUS",
-                "time_left": 50 * 60,
-                "event": "FOCUS_STARTED",
-                "timestamp": int(time.time())
+                "duration": 50 * 60,
+                "start_timestamp": int(time.time()),
+                "event": "FOCUS_STARTED"
             })
         else:
             self.pomo_action.setText("🍅 Start Pomodoro")
@@ -342,9 +342,9 @@ class GazeReaderApp(QObject):
             push_firebase_status_async({
                 "active": False,
                 "phase": "INACTIVE",
-                "time_left": 0,
-                "event": "STOPPED",
-                "timestamp": int(time.time())
+                "duration": 0,
+                "start_timestamp": 0,
+                "event": "STOPPED"
             })
         self.ambient_pill.update_session_state(self.pomodoro_active, self.study_time_left, self.pomodoro_phase)
 
@@ -363,15 +363,6 @@ class GazeReaderApp(QObject):
             # Handle Pomodoro countdown
             self.study_time_left -= 1
             self.dashboard.update_timer_label(self.study_time_left, self.pomodoro_phase)
-            
-            if self.study_time_left % 5 == 0:
-                push_firebase_status_async({
-                    "active": True,
-                    "phase": self.pomodoro_phase,
-                    "time_left": self.study_time_left,
-                    "event": "TICK",
-                    "timestamp": int(time.time())
-                })
 
             if self.study_time_left % 10 == 0:
                 push_firebase_journal_metrics_async()
@@ -545,9 +536,9 @@ class GazeReaderApp(QObject):
             push_firebase_status_async({
                 "active": True,
                 "phase": "BREAK",
-                "time_left": 10 * 60,
-                "event": "BREAK_STARTED",
-                "timestamp": int(time.time())
+                "duration": 10 * 60,
+                "start_timestamp": int(time.time()),
+                "event": "BREAK_STARTED"
             })
         else:
             self.pomodoro_phase = "FOCUS"
@@ -564,9 +555,9 @@ class GazeReaderApp(QObject):
             push_firebase_status_async({
                 "active": True,
                 "phase": "FOCUS",
-                "time_left": 50 * 60,
-                "event": "BREAK_ENDED",
-                "timestamp": int(time.time())
+                "duration": 50 * 60,
+                "start_timestamp": int(time.time()),
+                "event": "BREAK_ENDED"
             })
             
         self.dashboard.update_timer_label(self.study_time_left, self.pomodoro_phase)

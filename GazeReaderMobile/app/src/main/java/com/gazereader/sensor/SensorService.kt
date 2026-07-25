@@ -118,7 +118,10 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
             isBreakActive = true
             // Pause accelerometer during break to avoid false distraction pings
             unregisterAccelerometer()
-            breakAlarmHelper.updateBreakCountdownNotification(status.time_left)
+            val nowSec = System.currentTimeMillis() / 1000L
+            val elapsedSec = if (status.start_timestamp > 0L) maxOf(0L, nowSec - status.start_timestamp).toInt() else 0
+            val currentRemaining = maxOf(0, status.duration - elapsedSec)
+            breakAlarmHelper.updateBreakCountdownNotification(currentRemaining)
         } else {
             if (isBreakActive && status.phase == "FOCUS") {
                 isBreakActive = false
