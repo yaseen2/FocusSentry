@@ -197,11 +197,22 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
     override fun onStatusChanged(status: SessionStatus) {
         liveSessionStatus = status
+        val nowMs = System.currentTimeMillis()
+
         if (status.active) {
-            val nowMs = System.currentTimeMillis()
-            if (status.event.contains("STARTED") || status.event.contains("ENDED") || localTargetEndMs == 0L || activePhase != status.phase) {
-                localTargetEndMs = nowMs + (status.duration * 1000L)
+            val isStartEvent = status.event.contains("STARTED") || status.event.contains("ENDED")
+            val isPhaseSwitch = activePhase != status.phase
+
+            if (isStartEvent || localTargetEndMs == 0L || isPhaseSwitch) {
+                val targetDurationSec = if (status.time_left > 0) status.time_left else status.duration
+                localTargetEndMs = nowMs + (targetDurationSec * 1000L)
                 activePhase = status.phase
+            } else if (status.event == "SYNC_HEARTBEAT" && status.time_left > 0) {
+                // 5-minute periodic heartbeat calibration from PC
+                val currentPhoneRemainingSec = maxOf(0L, (localTargetEndMs - nowMs) / 1000L).toInt()
+                if (kotlin.math.abs(currentPhoneRemainingSec - status.time_left) >= 2) {
+                    localTargetEndMs = nowMs + (status.time_left * 1000L)
+                }
             }
         } else {
             localTargetEndMs = 0L
@@ -392,10 +403,18 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         val isActive = liveSessionStatus.active || SensorService.currentStatus.active
 
         if (isActive && localTargetEndMs > 0L) {
-            tvFirebaseSync.text = "🔥 Cloud Synced"
-            tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
+            val nowMs = System.currentTimeMillis()
+            val isPCOffline = status.last_updated_ms > 0L && (nowMs - status.last_updated_ms > 360000L)
+            
+            if (isPCOffline) {
+                tvFirebaseSync.text = "⚪ PC Disconnected"
+                tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
+            } else {
+                tvFirebaseSync.text = "🔥 Cloud Synced (5m Heartbeat)"
+                tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
+            }
 
-            val remainingMs = maxOf(0L, localTargetEndMs - System.currentTimeMillis())
+            val remainingMs = maxOf(0L, localTargetEndMs - nowMs)
             val currentRemaining = (remainingMs / 1000L).toInt()
 
             when (status.phase) {

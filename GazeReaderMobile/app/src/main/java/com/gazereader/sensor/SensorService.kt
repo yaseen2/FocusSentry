@@ -117,17 +117,33 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
         currentStatus = status
         
         if (status.phase == "BREAK") {
-            if (!isBreakActive || serviceBreakTargetEndMs == 0L) {
+            val nowMs = System.currentTimeMillis()
+            if (!isBreakActive || serviceBreakTargetEndMs == 0L || status.event == "BREAK_STARTED") {
                 isBreakActive = true
-                serviceBreakTargetEndMs = System.currentTimeMillis() + (status.duration * 1000L)
+                val targetDurationSec = if (status.time_left > 0) status.time_left else status.duration
+                serviceBreakTargetEndMs = nowMs + (targetDurationSec * 1000L)
+            } else if (status.event == "SYNC_HEARTBEAT" && status.time_left > 0) {
+                // 5-minute periodic heartbeat calibration during break
+                val currentPhoneRemainingSec = maxOf(0L, (serviceBreakTargetEndMs - nowMs) / 1000L).toInt()
+                if (kotlin.math.abs(currentPhoneRemainingSec - status.time_left) >= 2) {
+                    serviceBreakTargetEndMs = nowMs + (status.time_left * 1000L)
+                }
             }
+
             unregisterAccelerometer()
-            val remainingMs = maxOf(0L, serviceBreakTargetEndMs - System.currentTimeMillis())
+            val remainingMs = maxOf(0L, serviceBreakTargetEndMs - nowMs)
             val currentRemaining = (remainingMs / 1000L).toInt()
             breakAlarmHelper.updateBreakCountdownNotification(currentRemaining)
+
+            // Trigger alarm if break timer expires locally on phone
+            if (remainingMs <= 0L && isBreakActive) {
+                isBreakActive = false
+                breakAlarmHelper.triggerBreakOverAlarm()
+                registerAccelerometer()
+            }
         } else {
             serviceBreakTargetEndMs = 0L
-            if (isBreakActive && status.phase == "FOCUS") {
+            if (isBreakActive && (status.phase == "FOCUS" || status.event == "BREAK_ENDED")) {
                 isBreakActive = false
                 breakAlarmHelper.triggerBreakOverAlarm()
                 registerAccelerometer()
@@ -140,8 +156,11 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
     }
 
     override fun onBreakEnded() {
-        breakAlarmHelper.triggerBreakOverAlarm()
-        registerAccelerometer()
+        if (isBreakActive) {
+            isBreakActive = false
+            breakAlarmHelper.triggerBreakOverAlarm()
+            registerAccelerometer()
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent) {

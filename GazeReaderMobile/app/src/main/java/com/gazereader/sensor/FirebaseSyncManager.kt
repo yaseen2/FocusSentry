@@ -9,7 +9,9 @@ data class SessionStatus(
     val active: Boolean = false,
     val phase: String = "INACTIVE",
     val duration: Int = 0,
+    val time_left: Int = 0,
     val start_timestamp: Long = 0L,
+    val last_updated_ms: Long = 0L,
     val event: String = ""
 )
 
@@ -51,11 +53,13 @@ class FirebaseSyncManager {
 
                     val active = snapshot.child("active").getValue(Boolean::class.java) ?: false
                     val phase = snapshot.child("phase").getValue(String::class.java) ?: "INACTIVE"
-                    val duration = (snapshot.child("duration").getValue(Long::class.java) ?: snapshot.child("time_left").getValue(Long::class.java) ?: 0L).toInt()
+                    val duration = (snapshot.child("duration").getValue(Long::class.java) ?: 0L).toInt()
+                    val timeLeft = (snapshot.child("time_left").getValue(Long::class.java) ?: 0L).toInt()
                     val startTimestamp = snapshot.child("start_timestamp").getValue(Long::class.java) ?: snapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                    val lastUpdatedMs = snapshot.child("last_updated_ms").getValue(Long::class.java) ?: startTimestamp
                     val event = snapshot.child("event").getValue(String::class.java) ?: ""
 
-                    val status = SessionStatus(active, phase, duration, startTimestamp, event)
+                    val status = SessionStatus(active, phase, duration, timeLeft, startTimestamp, lastUpdatedMs, event)
                     listener.onStatusChanged(status)
 
                     if (event == "BREAK_ENDED" && lastEvent != "BREAK_ENDED") {

@@ -324,11 +324,14 @@ class GazeReaderApp(QObject):
             self.tracker_thread.start()
             QTimer.singleShot(2500, self.calibrate_center_baseline)
             
+            now_ms = int(time.time() * 1000)
             push_firebase_status_async({
                 "active": True,
                 "phase": "FOCUS",
                 "duration": 50 * 60,
-                "start_timestamp": int(time.time() * 1000),
+                "time_left": 50 * 60,
+                "start_timestamp": now_ms,
+                "last_updated_ms": now_ms,
                 "event": "FOCUS_STARTED"
             })
         else:
@@ -339,11 +342,14 @@ class GazeReaderApp(QObject):
             self.tracker_thread.stop()
             self.clear_all_overlays()
             
+            now_ms = int(time.time() * 1000)
             push_firebase_status_async({
                 "active": False,
                 "phase": "INACTIVE",
                 "duration": 0,
+                "time_left": 0,
                 "start_timestamp": 0,
+                "last_updated_ms": now_ms,
                 "event": "STOPPED"
             })
         self.ambient_pill.update_session_state(self.pomodoro_active, self.study_time_left, self.pomodoro_phase)
@@ -363,6 +369,21 @@ class GazeReaderApp(QObject):
             # Handle Pomodoro countdown
             self.study_time_left -= 1
             self.dashboard.update_timer_label(self.study_time_left, self.pomodoro_phase)
+
+            # Every 5 minutes (300 seconds), send a periodic heartbeat sync to phone
+            if self.study_time_left > 0 and self.study_time_left % 300 == 0:
+                duration_sec = 50 * 60 if self.pomodoro_phase == "FOCUS" else 10 * 60
+                now_ms = int(time.time() * 1000)
+                elapsed_ms = (duration_sec - self.study_time_left) * 1000
+                push_firebase_status_async({
+                    "active": True,
+                    "phase": self.pomodoro_phase,
+                    "duration": duration_sec,
+                    "time_left": self.study_time_left,
+                    "start_timestamp": now_ms - elapsed_ms,
+                    "last_updated_ms": now_ms,
+                    "event": "SYNC_HEARTBEAT"
+                })
 
             if self.study_time_left % 10 == 0:
                 push_firebase_journal_metrics_async()
@@ -533,11 +554,14 @@ class GazeReaderApp(QObject):
                 QSystemTrayIcon.MessageIcon.Information,
                 6000
             )
+            now_ms = int(time.time() * 1000)
             push_firebase_status_async({
                 "active": True,
                 "phase": "BREAK",
                 "duration": 10 * 60,
-                "start_timestamp": int(time.time() * 1000),
+                "time_left": 10 * 60,
+                "start_timestamp": now_ms,
+                "last_updated_ms": now_ms,
                 "event": "BREAK_STARTED"
             })
         else:
@@ -552,11 +576,14 @@ class GazeReaderApp(QObject):
                 QSystemTrayIcon.MessageIcon.Information,
                 6000
             )
+            now_ms = int(time.time() * 1000)
             push_firebase_status_async({
                 "active": True,
                 "phase": "FOCUS",
                 "duration": 50 * 60,
-                "start_timestamp": int(time.time() * 1000),
+                "time_left": 50 * 60,
+                "start_timestamp": now_ms,
+                "last_updated_ms": now_ms,
                 "event": "BREAK_ENDED"
             })
             
