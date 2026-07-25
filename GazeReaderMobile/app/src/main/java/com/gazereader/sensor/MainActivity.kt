@@ -192,9 +192,21 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         }
     }
 
+    private var sessionLatencyOffsetMs = 0L
+
     override fun onStatusChanged(status: SessionStatus) {
         liveSessionStatus = status
-        lastStatusTimeMs = System.currentTimeMillis()
+        val receiveMs = System.currentTimeMillis()
+        val startMs = if (status.start_timestamp < 100000000000L) status.start_timestamp * 1000L else status.start_timestamp
+        
+        if (status.event.contains("STARTED") || status.event.contains("ENDED")) {
+            val transitLatencyMs = maxOf(0L, receiveMs - startMs)
+            if (transitLatencyMs < 4000L) {
+                sessionLatencyOffsetMs = transitLatencyMs
+            } else {
+                sessionLatencyOffsetMs = 0L
+            }
+        }
         runOnUiThread { updateSessionUI() }
     }
 
@@ -371,8 +383,10 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             tvFirebaseSync.text = "🔥 Cloud Synced"
             tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
 
-            val nowSec = System.currentTimeMillis() / 1000L
-            val elapsedSec = if (status.start_timestamp > 0L) maxOf(0L, nowSec - status.start_timestamp).toInt() else 0
+            val nowMs = System.currentTimeMillis()
+            val startMs = if (status.start_timestamp < 100000000000L) status.start_timestamp * 1000L else status.start_timestamp
+            val adjustedNowMs = maxOf(startMs, nowMs - sessionLatencyOffsetMs)
+            val elapsedSec = if (startMs > 0L) maxOf(0L, (adjustedNowMs - startMs) / 1000L).toInt() else 0
             val currentRemaining = maxOf(0, status.duration - elapsedSec)
 
             when (status.phase) {

@@ -537,7 +537,7 @@ class GazeReaderApp(QObject):
                 "active": True,
                 "phase": "BREAK",
                 "duration": 10 * 60,
-                "start_timestamp": int(time.time()),
+                "start_timestamp": int(time.time() * 1000),
                 "event": "BREAK_STARTED"
             })
         else:
@@ -556,7 +556,7 @@ class GazeReaderApp(QObject):
                 "active": True,
                 "phase": "FOCUS",
                 "duration": 50 * 60,
-                "start_timestamp": int(time.time()),
+                "start_timestamp": int(time.time() * 1000),
                 "event": "BREAK_ENDED"
             })
             
