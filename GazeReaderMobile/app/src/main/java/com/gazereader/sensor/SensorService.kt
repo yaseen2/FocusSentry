@@ -111,18 +111,22 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
         sensorManager.unregisterListener(this)
     }
 
+    private var serviceBreakTargetEndMs = 0L
+
     override fun onStatusChanged(status: SessionStatus) {
         currentStatus = status
         
         if (status.phase == "BREAK") {
-            isBreakActive = true
-            // Pause accelerometer during break to avoid false distraction pings
+            if (!isBreakActive || serviceBreakTargetEndMs == 0L) {
+                isBreakActive = true
+                serviceBreakTargetEndMs = System.currentTimeMillis() + (status.duration * 1000L)
+            }
             unregisterAccelerometer()
-            val nowSec = System.currentTimeMillis() / 1000L
-            val elapsedSec = if (status.start_timestamp > 0L) maxOf(0L, nowSec - status.start_timestamp).toInt() else 0
-            val currentRemaining = maxOf(0, status.duration - elapsedSec)
+            val remainingMs = maxOf(0L, serviceBreakTargetEndMs - System.currentTimeMillis())
+            val currentRemaining = (remainingMs / 1000L).toInt()
             breakAlarmHelper.updateBreakCountdownNotification(currentRemaining)
         } else {
+            serviceBreakTargetEndMs = 0L
             if (isBreakActive && status.phase == "FOCUS") {
                 isBreakActive = false
                 breakAlarmHelper.triggerBreakOverAlarm()

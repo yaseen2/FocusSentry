@@ -192,22 +192,20 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         }
     }
 
-    private var sessionLatencyOffsetMs = 0L
-    private var lastEventReceiveMs = 0L
+    private var localTargetEndMs = 0L
+    private var activePhase = ""
 
     override fun onStatusChanged(status: SessionStatus) {
         liveSessionStatus = status
-        val receiveMs = System.currentTimeMillis()
-        val startMs = if (status.start_timestamp < 100000000000L) status.start_timestamp * 1000L else status.start_timestamp
-        
-        if (status.event.contains("STARTED") || status.event.contains("ENDED")) {
-            lastEventReceiveMs = receiveMs
-            val transitLatencyMs = maxOf(0L, receiveMs - startMs)
-            if (transitLatencyMs < 4000L) {
-                sessionLatencyOffsetMs = transitLatencyMs
-            } else {
-                sessionLatencyOffsetMs = 0L
+        if (status.active) {
+            val nowMs = System.currentTimeMillis()
+            if (status.event.contains("STARTED") || status.event.contains("ENDED") || localTargetEndMs == 0L || activePhase != status.phase) {
+                localTargetEndMs = nowMs + (status.duration * 1000L)
+                activePhase = status.phase
             }
+        } else {
+            localTargetEndMs = 0L
+            activePhase = ""
         }
         runOnUiThread { updateSessionUI() }
     }
@@ -381,20 +379,12 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         val status = if (liveSessionStatus.active) liveSessionStatus else SensorService.currentStatus
         val isActive = liveSessionStatus.active || SensorService.currentStatus.active
 
-        if (isActive) {
+        if (isActive && localTargetEndMs > 0L) {
             tvFirebaseSync.text = "🔥 Cloud Synced"
             tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
 
-            val nowMs = System.currentTimeMillis()
-            val startMs = if (status.start_timestamp < 100000000000L) status.start_timestamp * 1000L else status.start_timestamp
-            
-            val currentRemaining = if ((status.event.contains("STARTED") || status.event.contains("ENDED")) && (nowMs - lastEventReceiveMs < 1200L)) {
-                status.duration
-            } else {
-                val adjustedNowMs = maxOf(startMs, nowMs - sessionLatencyOffsetMs)
-                val elapsedSec = if (startMs > 0L) maxOf(0L, (adjustedNowMs - startMs) / 1000L).toInt() else 0
-                maxOf(0, status.duration - elapsedSec)
-            }
+            val remainingMs = maxOf(0L, localTargetEndMs - System.currentTimeMillis())
+            val currentRemaining = (remainingMs / 1000L).toInt()
 
             when (status.phase) {
                 "FOCUS" -> {
