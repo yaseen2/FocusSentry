@@ -144,6 +144,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         }
 
         btnStopAlarm.setOnClickListener {
+            BreakAlarmHelper.stopActiveAlarm(this)
             val stopIntent = Intent(this, SensorService::class.java).apply {
                 action = SensorService.ACTION_STOP_ALARM
             }
@@ -177,6 +178,13 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 }
             }
         })
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.getBooleanExtra("STOP_ALARM_ON_OPEN", false) == true) {
+            BreakAlarmHelper.stopActiveAlarm(this)
+        }
     }
 
     private fun setupTabListeners() {
@@ -397,6 +405,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
     override fun onResume() {
         super.onResume()
+        BreakAlarmHelper.stopActiveAlarm(this)
         handler.post(statusUpdateRunnable)
     }
 

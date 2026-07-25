@@ -33,6 +33,10 @@
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Study device motion detector linked to desktop companion client." />
         </service>
+
+        <receiver
+            android:name=".AlarmStopReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>
