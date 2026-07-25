@@ -26,7 +26,7 @@ import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 
-class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener {
+class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener, FirebaseSyncManager.SessionListener {
 
     private lateinit var etIp: EditText
     private lateinit var etPort: EditText
@@ -52,8 +52,12 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
     private lateinit var prefs: SharedPreferences
     private lateinit var journalManager: FirebaseJournalManager
+    private lateinit var syncManager: FirebaseSyncManager
     private var currentTab = "DAY"
     private var cachedJournalData = JournalData()
+
+    private var liveSessionStatus = SessionStatus()
+    private var lastStatusTimeMs = 0L
 
     private val handler = Handler(Looper.getMainLooper())
     private val statusUpdateRunnable = object : Runnable {
@@ -160,7 +164,8 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         journalManager = FirebaseJournalManager()
         journalManager.startListening(this)
 
-        val syncManager = FirebaseSyncManager()
+        syncManager = FirebaseSyncManager()
+        syncManager.startListening(this)
         syncManager.startListeningConfig(object : FirebaseSyncManager.LaptopConfigListener {
             override fun onLaptopConfigUpdated(ip: String, port: String) {
                 runOnUiThread {
@@ -186,6 +191,14 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             BreakAlarmHelper.stopActiveAlarm(this)
         }
     }
+
+    override fun onStatusChanged(status: SessionStatus) {
+        liveSessionStatus = status
+        lastStatusTimeMs = System.currentTimeMillis()
+        runOnUiThread { updateSessionUI() }
+    }
+
+    override fun onBreakEnded() {}
 
     private fun setupTabListeners() {
         btnTabDay.setOnClickListener { selectTab("DAY") }
@@ -213,48 +226,53 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     }
 
     private fun setupChartStyles() {
-        val targetLine = com.github.mikephil.charting.components.LimitLine(9.0f, "9h Goal 🎯").apply {
-            lineWidth = 2f
-            enableDashedLine(12f, 8f, 0f)
-            lineColor = Color.parseColor("#10b981")
-            textColor = Color.parseColor("#34d399")
-            textSize = 10f
-            labelPosition = com.github.mikephil.charting.components.LimitLine.LimitLabelPosition.RIGHT_TOP
+        barChart.description.isEnabled = false
+        barChart.setDrawGridBackground(false)
+        barChart.setDrawBarShadow(false)
+        barChart.isHighlightFullBarEnabled = false
+        barChart.legend.isEnabled = false
+        barChart.setPinchZoom(true)
+        barChart.setScaleEnabled(true)
+        barChart.isDoubleTapToZoomEnabled = false
+
+        val xAxis = barChart.xAxis
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.setDrawGridLines(false)
+        xAxis.textColor = Color.parseColor("#94a3b8")
+        xAxis.granularity = 1f
+
+        val yAxisLeft = barChart.axisLeft
+        yAxisLeft.setDrawGridLines(true)
+        yAxisLeft.gridColor = Color.parseColor("#1e293b")
+        yAxisLeft.textColor = Color.parseColor("#94a3b8")
+        yAxisLeft.axisMinimum = 0f
+        yAxisLeft.valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+            override fun getFormattedValue(value: Float): String {
+                val hours = value / 3600f
+                return String.format("%.1fh", hours)
+            }
         }
 
-        // Configure Bar Chart Style
-        barChart.apply {
-            description.isEnabled = false
-            legend.isEnabled = false
-            setDrawGridBackground(false)
-            setDrawBarShadow(false)
-            setTouchEnabled(true)
-            isDragEnabled = true
-            isScaleXEnabled = true
-            isScaleYEnabled = false
-            setPinchZoom(false)
-            xAxis.apply {
-                position = XAxis.XAxisPosition.BOTTOM
-                textColor = Color.parseColor("#94a3b8")
-                setDrawGridLines(false)
-                granularity = 1f
+        // Emerald Green Dashed 9-Hour Target Line
+        val targetLine = com.github.mikephil.charting.components.LimitLine(9 * 3600f, "9h Goal 🎯").apply {
+            lineColor = Color.parseColor("#10b981")
+            lineWidth = 1.5f
+            enableDashedLine(12f, 8f, 0f)
+            textColor = Color.parseColor("#10b981")
+            textSize = 10f
+        }
+        yAxisLeft.addLimitLine(targetLine)
+        yAxisLeft.setDrawLimitLinesBehindData(true)
+
+        val yAxisRight = barChart.axisRight
+        yAxisRight.isEnabled = false
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
             }
-            axisLeft.apply {
-                textColor = Color.parseColor("#94a3b8")
-                setDrawGridLines(true)
-                gridColor = Color.parseColor("#1e293b")
-                axisMinimum = 0f
-                spaceTop = 25f
-                removeAllLimitLines()
-                addLimitLine(targetLine)
-                setDrawLimitLinesBehindData(true)
-                valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
-                    override fun getFormattedValue(value: Float): String {
-                        return String.format("%.1fh", value)
-                    }
-                }
-            }
-            axisRight.isEnabled = false
         }
     }
 
@@ -307,79 +325,68 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 val e = history[i]
                 totalAct += e.active_seconds
                 totalDist += e.distracted_seconds
-                val actH = (e.active_seconds / 3600.0f)
-                val distH = (e.distracted_seconds / 3600.0f)
-                entries.add(BarEntry(i.toFloat(), floatArrayOf(actH, distH)))
+                entries.add(BarEntry(i.toFloat(), floatArrayOf(e.active_seconds.toFloat(), e.distracted_seconds.toFloat())))
                 xLabels.add(e.day)
             }
 
-            val overallEfficiency = if (totalAct + totalDist > 0) ((totalAct.toDouble() / (totalAct + totalDist)) * 100).toInt() else 100
-            val totActStr = if (totalAct >= 3600) "${totalAct / 3600}h ${(totalAct % 3600) / 60}m" else "${totalAct / 60}m"
-            val totDistStr = if (totalDist >= 3600) "${totalDist / 3600}h ${(totalDist % 3600) / 60}m" else "${totalDist / 60}m"
+            val actStr = if (totalAct >= 3600) "${totalAct / 3600}h ${(totalAct % 3600) / 60}m" else "${totalAct / 60}m"
+            val distStr = if (totalDist >= 3600) "${totalDist / 3600}h ${(totalDist % 3600) / 60}m" else "${totalDist / 60}m"
+            val eff = if (totalAct + totalDist > 0) (totalAct * 100) / (totalAct + totalDist) else 100
 
-            tvActiveMin.text = totActStr
-            tvDistractedMin.text = totDistStr
-            tvEfficiency.text = "$overallEfficiency%"
+            tvActiveMin.text = actStr
+            tvDistractedMin.text = distStr
+            tvEfficiency.text = "$eff%"
 
-            if (entries.isNotEmpty()) {
-                val set = BarDataSet(entries, "Study History").apply {
-                    colors = listOf(Color.parseColor("#6366f1"), Color.parseColor("#f43f5e"))
-                    stackLabels = arrayOf("Focused", "Distracted")
-                    setDrawValues(true)
-                    valueTextColor = Color.parseColor("#cbd5e1")
-                    valueTextSize = 11f
-                    valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
-                        override fun getBarStackedLabel(value: Float, stackedEntry: BarEntry?): String {
-                            if (stackedEntry != null && stackedEntry.yVals != null && stackedEntry.yVals.isNotEmpty()) {
-                                val actH = stackedEntry.yVals[0]
-                                if (Math.abs(value - actH) < 0.01f && actH > 0.05f) {
-                                    val h = actH.toInt()
-                                    val m = ((actH - h) * 60).toInt()
-                                    return if (h > 0) "${h}h ${m}m" else "${m}m"
-                                }
-                            }
-                            return ""
-                        }
+            val dataSet = BarDataSet(entries, "Study History").apply {
+                colors = listOf(Color.parseColor("#6366f1"), Color.parseColor("#f43f5e"))
+                stackLabels = arrayOf("Focused", "Distracted")
+                valueTextColor = Color.parseColor("#e2e8f0")
+                valueTextSize = 9f
+                valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+                    override fun getFormattedValue(value: Float): String {
+                        val sec = value.toInt()
+                        if (sec <= 0) return ""
+                        val h = sec / 3600
+                        val m = (sec % 3600) / 60
+                        return if (h > 0) "${h}h ${m}m" else "${m}m"
                     }
                 }
+            }
 
-                barChart.xAxis.valueFormatter = IndexAxisValueFormatter(xLabels)
-                barChart.data = BarData(set)
-                barChart.setVisibleXRangeMaximum(7f)
+            barChart.xAxis.valueFormatter = IndexAxisValueFormatter(xLabels)
+            barChart.data = BarData(dataSet)
+            barChart.setVisibleXRangeMaximum(7f)
+            if (entries.isNotEmpty()) {
                 barChart.moveViewToX((entries.size - 1).toFloat())
-                barChart.invalidate()
-                barChart.animateY(500)
             }
-        }
-    }
-
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
-            }
+            barChart.invalidate()
         }
     }
 
     private fun updateSessionUI() {
-        val status = SensorService.currentStatus
-        if (SensorService.isRunning) {
+        val status = if (liveSessionStatus.active) liveSessionStatus else SensorService.currentStatus
+        val isActive = liveSessionStatus.active || SensorService.currentStatus.active
+
+        if (isActive) {
             tvFirebaseSync.text = "🔥 Cloud Synced"
             tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
+
+            val elapsedSec = if (lastStatusTimeMs > 0L) ((System.currentTimeMillis() - lastStatusTimeMs) / 1000).toInt() else 0
+            val currentRemaining = maxOf(0, status.time_left - elapsedSec)
 
             when (status.phase) {
                 "FOCUS" -> {
                     tvSessionPhase.text = "🎯 FOCUS PHASE"
                     tvSessionPhase.setTextColor(ContextCompat.getColor(this, android.R.color.holo_blue_light))
-                    val min = status.time_left / 60
-                    val sec = status.time_left % 60
+                    val min = currentRemaining / 60
+                    val sec = currentRemaining % 60
                     tvSessionTimer.text = String.format("%02d:%02d remaining", min, sec)
                 }
                 "BREAK" -> {
                     tvSessionPhase.text = "☕ BREAK PHASE"
                     tvSessionPhase.setTextColor(ContextCompat.getColor(this, android.R.color.holo_orange_light))
-                    val min = status.time_left / 60
-                    val sec = status.time_left % 60
+                    val min = currentRemaining / 60
+                    val sec = currentRemaining % 60
                     tvSessionTimer.text = String.format("%02d:%02d remaining", min, sec)
                 }
                 else -> {
@@ -389,8 +396,8 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 }
             }
         } else {
-            tvFirebaseSync.text = "⚪ Service Inactive"
-            tvFirebaseSync.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray))
+            tvFirebaseSync.text = if (SensorService.isRunning) "⚡ Ready" else "⚪ Service Inactive"
+            tvFirebaseSync.setTextColor(ContextCompat.getColor(this, if (SensorService.isRunning) android.R.color.holo_blue_light else android.R.color.darker_gray))
             tvSessionPhase.text = "STANDBY"
             tvSessionPhase.setTextColor(ContextCompat.getColor(this, android.R.color.white))
             tvSessionTimer.text = "--:--"
@@ -417,5 +424,6 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     override fun onDestroy() {
         super.onDestroy()
         journalManager.stopListening()
+        syncManager.stopListening()
     }
 }
