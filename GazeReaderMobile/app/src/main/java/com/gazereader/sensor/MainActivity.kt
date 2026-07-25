@@ -355,9 +355,21 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 valueTextColor = Color.parseColor("#e2e8f0")
                 valueTextSize = 9f
                 valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+                    override fun getBarStackedLabel(value: Float, stackedEntry: BarEntry?): String {
+                        if (value < 600f) return "" // Hide labels for segments under 10m to prevent text overlap
+                        val total = stackedEntry?.yVals?.sum() ?: value
+                        if (total > 0f && (value / total) < 0.25f && (stackedEntry?.yVals?.size ?: 0) > 1) {
+                            return "" // Hide small secondary stack label if it would collide with primary label
+                        }
+                        val sec = value.toInt()
+                        val h = sec / 3600
+                        val m = (sec % 3600) / 60
+                        return if (h > 0) "${h}h ${m}m" else "${m}m"
+                    }
+
                     override fun getFormattedValue(value: Float): String {
                         val sec = value.toInt()
-                        if (sec <= 0) return ""
+                        if (sec < 600) return ""
                         val h = sec / 3600
                         val m = (sec % 3600) / 60
                         return if (h > 0) "${h}h ${m}m" else "${m}m"
