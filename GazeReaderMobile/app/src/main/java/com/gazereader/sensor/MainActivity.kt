@@ -193,6 +193,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     }
 
     private var sessionLatencyOffsetMs = 0L
+    private var lastEventReceiveMs = 0L
 
     override fun onStatusChanged(status: SessionStatus) {
         liveSessionStatus = status
@@ -200,6 +201,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         val startMs = if (status.start_timestamp < 100000000000L) status.start_timestamp * 1000L else status.start_timestamp
         
         if (status.event.contains("STARTED") || status.event.contains("ENDED")) {
+            lastEventReceiveMs = receiveMs
             val transitLatencyMs = maxOf(0L, receiveMs - startMs)
             if (transitLatencyMs < 4000L) {
                 sessionLatencyOffsetMs = transitLatencyMs
@@ -385,9 +387,14 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
             val nowMs = System.currentTimeMillis()
             val startMs = if (status.start_timestamp < 100000000000L) status.start_timestamp * 1000L else status.start_timestamp
-            val adjustedNowMs = maxOf(startMs, nowMs - sessionLatencyOffsetMs)
-            val elapsedSec = if (startMs > 0L) maxOf(0L, (adjustedNowMs - startMs) / 1000L).toInt() else 0
-            val currentRemaining = maxOf(0, status.duration - elapsedSec)
+            
+            val currentRemaining = if ((status.event.contains("STARTED") || status.event.contains("ENDED")) && (nowMs - lastEventReceiveMs < 1200L)) {
+                status.duration
+            } else {
+                val adjustedNowMs = maxOf(startMs, nowMs - sessionLatencyOffsetMs)
+                val elapsedSec = if (startMs > 0L) maxOf(0L, (adjustedNowMs - startMs) / 1000L).toInt() else 0
+                maxOf(0, status.duration - elapsedSec)
+            }
 
             when (status.phase) {
                 "FOCUS" -> {

@@ -328,7 +328,7 @@ class GazeReaderApp(QObject):
                 "active": True,
                 "phase": "FOCUS",
                 "duration": 50 * 60,
-                "start_timestamp": int(time.time()),
+                "start_timestamp": int(time.time() * 1000),
                 "event": "FOCUS_STARTED"
             })
         else:
