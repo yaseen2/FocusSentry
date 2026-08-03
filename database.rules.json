@@ -1,0 +1,22 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "session_status": {
+      ".read": true,
+      ".write": true
+    },
+    "laptop_config": {
+      ".read": true,
+      ".write": true
+    },
+    "journal_metrics": {
+      ".read": true,
+      ".write": true
+    },
+    "hotspot_command": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
