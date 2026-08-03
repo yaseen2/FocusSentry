@@ -43,6 +43,7 @@ class FirebaseJournalManager {
         try {
             val db = FirebaseDatabase.getInstance("https://gazereader-default-rtdb.firebaseio.com")
             val ref = db.getReference("journal")
+            ref.keepSynced(true)
 
             dbListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -88,7 +89,11 @@ class FirebaseJournalManager {
                     listener.onJournalDataUpdated(journalData)
                 }
 
-                override fun onCancelled(error: DatabaseError) {}
+                override fun onCancelled(error: DatabaseError) {
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        try { ref.addValueEventListener(this) } catch (e: Exception) {}
+                    }, 3000)
+                }
             }
 
             ref.addValueEventListener(dbListener!!)

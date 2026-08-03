@@ -1,7 +1,5 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false,
     "session_status": {
       ".read": true,
       ".write": true
