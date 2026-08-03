@@ -78,20 +78,31 @@ def push_firebase_hotspot_command_async(action="ENABLE"):
 
 def start_windows_network_change_listener(on_change_callback):
     def _listen():
-        import ctypes
-        import ctypes.wintypes
-        iphlpapi = ctypes.windll.iphlpapi
-        handle = ctypes.wintypes.HANDLE()
-        overlapped = ctypes.wintypes.OVERLAPPED()
-        while True:
-            try:
+        try:
+            import ctypes
+            import ctypes.wintypes
+
+            class OVERLAPPED(ctypes.Structure):
+                _fields_ = [
+                    ("Internal", ctypes.c_ulong),
+                    ("InternalHigh", ctypes.c_ulong),
+                    ("Offset", ctypes.c_ulong),
+                    ("OffsetHigh", ctypes.c_ulong),
+                    ("hEvent", ctypes.wintypes.HANDLE)
+                ]
+
+            iphlpapi = ctypes.windll.iphlpapi
+            handle = ctypes.wintypes.HANDLE()
+            overlapped = OVERLAPPED()
+            while True:
                 ret = iphlpapi.NotifyAddrChange(ctypes.byref(handle), ctypes.byref(overlapped))
                 if ret == 0 or ret == 997: # ERROR_IO_PENDING
-                    ctypes.windll.kernel32.WaitForSingleObject(handle, 0xFFFFFFFF)
+                    if handle.value:
+                        ctypes.windll.kernel32.WaitForSingleObject(handle, 0xFFFFFFFF)
                 time.sleep(1.0) # Debounce to allow IP routing assignment
                 on_change_callback()
-            except Exception:
-                time.sleep(5.0)
+        except Exception as e:
+            pass
 
     t = threading.Thread(target=_listen, daemon=True)
     t.start()
