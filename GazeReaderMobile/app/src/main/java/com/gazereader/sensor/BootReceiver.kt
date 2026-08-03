@@ -13,9 +13,10 @@ class BootReceiver : BroadcastReceiver() {
             action == "com.htc.intent.action.QUICKBOOT_POWERON") {
 
             val prefs = context.getSharedPreferences("GazeReaderPrefs", Context.MODE_PRIVATE)
-            val autoStart = prefs.getBoolean("auto_start_on_boot", true)
+            val wasTrackingActive = prefs.getBoolean("was_tracking_active", false)
 
-            if (autoStart) {
+            // ONLY auto-start tracking if tracking was active before power off/reboot
+            if (wasTrackingActive) {
                 val ip = prefs.getString("laptop_ip", "192.168.1.100") ?: "192.168.1.100"
                 val port = prefs.getString("laptop_port", "5001") ?: "5001"
                 val sens = prefs.getFloat("sensitivity", 2.0f)
@@ -25,11 +26,20 @@ class BootReceiver : BroadcastReceiver() {
                     putExtra("port", port)
                     putExtra("sensitivity", sens)
                 }
-                
+
                 try {
                     ContextCompat.startForegroundService(context, serviceIntent)
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    try {
+                        val launchIntent = Intent(context, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                            putExtra("AUTO_START_TRACKING", true)
+                        }
+                        context.startActivity(launchIntent)
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
+                    }
                 }
             }
         }

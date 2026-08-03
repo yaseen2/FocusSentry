@@ -138,11 +138,13 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
             if (isRunning) {
                 stopService(serviceIntent)
+                prefs.edit().putBoolean("was_tracking_active", false).apply()
                 btnToggle.text = "Start Tracking"
                 Toast.makeText(this, "Tracking Stopped", Toast.LENGTH_SHORT).show()
             } else {
                 ContextCompat.startForegroundService(this, serviceIntent)
-                btnToggle.text = "Start Tracking"
+                prefs.edit().putBoolean("was_tracking_active", true).apply()
+                btnToggle.text = "Stop Tracking"
                 Toast.makeText(this, "Tracking Started", Toast.LENGTH_SHORT).show()
             }
         }
@@ -183,6 +185,20 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 }
             }
         })
+
+        if (intent?.getBooleanExtra("AUTO_START_TRACKING", false) == true && !SensorService.isRunning) {
+            val ip = etIp.text.toString().trim()
+            val port = etPort.text.toString().trim()
+            val sens = sbSensitivity.progress / 10.0f
+            if (ip.isNotEmpty() && port.isNotEmpty()) {
+                val serviceIntent = Intent(this, SensorService::class.java).apply {
+                    putExtra("ip", ip)
+                    putExtra("port", port)
+                    putExtra("sensitivity", sens)
+                }
+                ContextCompat.startForegroundService(this, serviceIntent)
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent?) {
