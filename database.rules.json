@@ -10,6 +10,10 @@
       ".read": true,
       ".write": true
     },
+    "journal": {
+      ".read": true,
+      ".write": true
+    },
     "journal_metrics": {
       ".read": true,
       ".write": true
