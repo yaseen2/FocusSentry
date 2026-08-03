@@ -171,14 +171,19 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
             val y = event.values[1]
             val z = event.values[2]
 
+            val totalAcc = kotlin.math.sqrt(x * x + y * y + z * z)
+            val gravityDiff = abs(totalAcc - SensorManager.GRAVITY_EARTH)
+
             if (hasLastValues) {
                 val deltaX = abs(x - lastX)
                 val deltaY = abs(y - lastY)
                 val deltaZ = abs(z - lastZ)
-                
-                val magnitude = deltaX + deltaY + deltaZ
+                val frameJitter = deltaX + deltaY + deltaZ
 
-                if (magnitude > sensitivity) {
+                // Trigger on either frame movement or gravity vector deviation (pickup tilt/lift)
+                val motionScore = maxOf(gravityDiff, frameJitter)
+
+                if (motionScore > sensitivity) {
                     val now = System.currentTimeMillis()
                     if (now - lastPingTime > 1500) { // Throttle pings to 1.5s
                         lastPingTime = now
@@ -197,19 +202,32 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     private fun sendPingToLaptop() {
-        serviceScope.launch {
+        serviceScope.launch(Dispatchers.IO) {
+            // 1. Try Wi-Fi IP ping
+            var success = false
             try {
                 val urlSpec = "http://$ip:$port/ping"
                 val url = URL(urlSpec)
                 val conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 800
-                conn.readTimeout = 800
+                conn.connectTimeout = 600
+                conn.readTimeout = 600
                 conn.requestMethod = "GET"
-                
                 val code = conn.responseCode
                 conn.disconnect()
-            } catch (e: Exception) {
-                e.printStackTrace()
+                if (code == 200) success = true
+            } catch (e: Exception) {}
+
+            // 2. Fallback to ADB USB reverse tunnel (127.0.0.1:5001) if Wi-Fi ping failed
+            if (!success) {
+                try {
+                    val fallbackUrl = URL("http://127.0.0.1:$port/ping")
+                    val conn = fallbackUrl.openConnection() as HttpURLConnection
+                    conn.connectTimeout = 500
+                    conn.readTimeout = 500
+                    conn.requestMethod = "GET"
+                    conn.responseCode
+                    conn.disconnect()
+                } catch (e: Exception) {}
             }
         }
     }
