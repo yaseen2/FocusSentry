@@ -218,6 +218,7 @@ class GazeReaderApp(QObject):
         self.tracker_thread.status_updated.connect(self.dashboard.set_tracker_status)
         self.tracker_thread.gaze_data_updated.connect(self.handle_tracker_gaze)
         self.tracker_thread.frame_ready.connect(self.dashboard.update_camera_frame)
+        self.tracker_thread.gesture_screen_off_triggered.connect(self.turn_off_pc_display)
         
         # 3. Setup System Tray Icon
         self.tray_icon = QSystemTrayIcon(self)
@@ -240,6 +241,7 @@ class GazeReaderApp(QObject):
         self.dashboard.set_center_requested.connect(self.calibrate_center_baseline)
         self.dashboard.resume_suspend_detected.connect(self.run_adb_reverse)
         self.dashboard.adapt_hotkey_pressed.connect(self.dismiss_lock_state)
+        self.dashboard.turn_off_screen_requested.connect(self.turn_off_pc_display)
         
         # Bind overlays back resume actions
         for ov in self.overlays:
@@ -619,6 +621,17 @@ class GazeReaderApp(QObject):
             self.yaw_offset = self.tracker_data["yaw"]
             self.pitch_offset = self.tracker_data["pitch"]
             self.dashboard.lbl_calib_state.setText(f"Center: Y:{self.yaw_offset:.1f}°, P:{self.pitch_offset:.1f}°")
+
+    def turn_off_pc_display(self):
+        try:
+            import ctypes
+            import winsound
+            winsound.Beep(750, 90)
+            # Win32 SC_MONITORPOWER (2 = power off display)
+            ctypes.windll.user32.SendMessageW(0xFFFF, 0x0112, 0xF170, 2)
+            print("⚡ Gesture / Hotkey Display Sleep Executed!")
+        except Exception as e:
+            print("Failed to turn off PC display:", e)
 
     def run_sensor_server(self):
         try:

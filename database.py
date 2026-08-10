@@ -63,6 +63,11 @@ def init_db():
     if not row:
         cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('eye_roll_threshold', '35')")
         
+    cursor.execute("SELECT value FROM settings WHERE key = 'gesture_display_enabled'")
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('gesture_display_enabled', '1')")
+
     conn.commit()
     conn.close()
 

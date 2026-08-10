@@ -12,12 +12,16 @@ class FaceGazeTracker(QThread):
     status_updated = pyqtSignal(str, str) # (colorClass, textStatus)
     gaze_data_updated = pyqtSignal(float, float, float, bool, bool) # (yaw, pitch, roll, is_face, is_eye_distracted)
     frame_ready = pyqtSignal(np.ndarray) # For optional camera dashboard preview
+    gesture_screen_off_triggered = pyqtSignal()
 
     def __init__(self):
         super().__init__()
         self.running = False
         self.camera_index = 0
         self.mp_face_mesh = mp.solutions.face_mesh
+        self.mp_hands = mp.solutions.hands
+        self.gesture_hold_frames = 0
+        self.last_gesture_time = 0.0
         
         # 3D Generic Head Model Reference Coordinates (in mm)
         self.model_points = np.array([
@@ -161,6 +165,40 @@ class FaceGazeTracker(QThread):
                             is_eye_distracted = True
                     except Exception:
                         is_eye_distracted = False
+
+                # C. Check Gesture Display Power Off (Open Palm / Raised Hand)
+                try:
+                    gesture_enabled = database.get_setting("gesture_display_enabled", "1") == "1"
+                    if gesture_enabled and getattr(self, "frame_counter", 0) % 4 == 0:
+                        if not hasattr(self, "hands_model"):
+                            self.hands_model = self.mp_hands.Hands(
+                                max_num_hands=1,
+                                min_detection_confidence=0.6,
+                                min_tracking_confidence=0.6
+                            )
+                        hands_res = self.hands_model.process(rgb_frame)
+                        if hands_res.multi_hand_landmarks:
+                            h_landmarks = hands_res.multi_hand_landmarks[0]
+                            # Open Palm: Index(8), Middle(12), Ring(16), Pinky(20) tips extended above MCP joints (6, 10, 14, 18)
+                            is_open_palm = (
+                                h_landmarks.landmark[8].y < h_landmarks.landmark[6].y and
+                                h_landmarks.landmark[12].y < h_landmarks.landmark[10].y and
+                                h_landmarks.landmark[16].y < h_landmarks.landmark[14].y and
+                                h_landmarks.landmark[20].y < h_landmarks.landmark[18].y
+                            )
+                            if is_open_palm:
+                                self.gesture_hold_frames += 1
+                                if self.gesture_hold_frames >= 4 and (time.time() - self.last_gesture_time) > 6.0:
+                                    self.gesture_hold_frames = 0
+                                    self.last_gesture_time = time.time()
+                                    self.gesture_screen_off_triggered.emit()
+                            else:
+                                self.gesture_hold_frames = 0
+                        else:
+                            self.gesture_hold_frames = 0
+                    self.frame_counter = getattr(self, "frame_counter", 0) + 1
+                except Exception as e:
+                    pass
 
                 # Emit tracking data
                 self.gaze_data_updated.emit(yaw, pitch, roll, is_face_present, is_eye_distracted)

@@ -136,6 +136,7 @@ class StudyDashboard(QWidget):
     resume_suspend_detected = pyqtSignal()
     adapt_hotkey_pressed = pyqtSignal()
     hotspot_toggle_requested = pyqtSignal()
+    turn_off_screen_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -159,44 +160,41 @@ class StudyDashboard(QWidget):
             QLineEdit {
                 background-color: #1e293b;
                 border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 8px;
-                padding: 8px 12px;
+                border-radius: 6px;
+                padding: 6px 10px;
                 color: #f8fafc;
                 font-size: 12px;
             }
             QLineEdit:focus {
-                border-color: #6366f1;
-                background-color: #0f172a;
-            }
-            QPushButton {
-                font-size: 12px;
-                font-weight: 600;
-                border-radius: 8px;
-                padding: 8px 16px;
-                border: none;
-            }
-            QFrame.card {
-                background-color: #131c2e;
-                border: 1px solid rgba(255, 255, 255, 0.04);
-                border-radius: 12px;
+                border: 1px solid #6366f1;
             }
             QCheckBox {
                 font-size: 11px;
                 color: #94a3b8;
+                spacing: 6px;
             }
             QCheckBox::indicator {
                 width: 14px;
                 height: 14px;
-                border: 1px solid rgba(255, 255, 255, 0.15);
                 border-radius: 3px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
                 background: #1e293b;
             }
             QCheckBox::indicator:checked {
                 background: #6366f1;
                 border-color: #6366f1;
             }
+            QPushButton {
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-weight: 600;
+            }
+            QFrame[class="card"] {
+                background-color: #0f172a;
+                border: 1px solid rgba(255, 255, 255, 0.03);
+                border-radius: 12px;
+            }
             QSlider::groove:horizontal {
-                border: none;
                 height: 4px;
                 background: #1e293b;
                 border-radius: 2px;
@@ -250,8 +248,6 @@ class StudyDashboard(QWidget):
         outer_layout.setContentsMargins(24, 20, 24, 24)
         outer_layout.setSpacing(16)
 
-        # 1. Header Row
-        header_layout = QHBoxLayout()
         # 1. Header Row
         header_layout = QHBoxLayout()
         logo_lbl = QLabel("GazeReader", self)
@@ -342,6 +338,28 @@ class StudyDashboard(QWidget):
         self.btn_set_center.clicked.connect(self.set_center_requested.emit)
         status_row.addWidget(self.btn_set_center)
         
+        # Turn off screen button
+        self.btn_turn_off_screen = QPushButton("Off Screen (F9)", self.status_card)
+        self.btn_turn_off_screen.setObjectName("btn_turn_off_screen")
+        self.btn_turn_off_screen.setFixedSize(105, 26)
+        self.btn_turn_off_screen.setStyleSheet("""
+            QPushButton#btn_turn_off_screen {
+                background-color: #1e293b;
+                color: #10b981;
+                border: 1px solid rgba(16, 185, 129, 0.3);
+                border-radius: 6px;
+                padding: 2px 6px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton#btn_turn_off_screen:hover {
+                background-color: rgba(16, 185, 129, 0.15);
+                color: #f8fafc;
+            }
+        """)
+        self.btn_turn_off_screen.clicked.connect(self.turn_off_screen_requested.emit)
+        status_row.addWidget(self.btn_turn_off_screen)
+        
         self.lbl_calib_state = QLabel("Center: Y:0°, P:0°", self.status_card)
         self.lbl_calib_state.setFont(QFont("Inter", 9))
         self.lbl_calib_state.setStyleSheet("color: #64748b;")
@@ -361,7 +379,7 @@ class StudyDashboard(QWidget):
         pref_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
         pref_layout.addWidget(pref_title)
 
-        # Startup and chimes
+        # Startup, chimes, preview, and gesture screen off
         chk_layout = QHBoxLayout()
         self.chk_startup = QCheckBox("Startup boot", pref_card)
         self.chk_startup.setChecked(database.get_setting("startup_enabled", False))
@@ -375,9 +393,14 @@ class StudyDashboard(QWidget):
         self.chk_preview.setChecked(database.get_setting("preview_enabled", False))
         self.chk_preview.stateChanged.connect(self.toggle_video_preview)
 
+        self.chk_gesture_display = QCheckBox("Gesture screen off", pref_card)
+        self.chk_gesture_display.setChecked(database.get_setting("gesture_display_enabled", True))
+        self.chk_gesture_display.stateChanged.connect(lambda state: database.save_setting("gesture_display_enabled", state == 2))
+
         chk_layout.addWidget(self.chk_startup)
         chk_layout.addWidget(self.chk_chime)
         chk_layout.addWidget(self.chk_preview)
+        chk_layout.addWidget(self.chk_gesture_display)
         pref_layout.addLayout(chk_layout)
 
         # Yaw Slider Row
@@ -1176,20 +1199,22 @@ class StudyDashboard(QWidget):
             ctypes.windll.user32.UnregisterHotKey.argtypes = [wintypes.HWND, ctypes.c_int]
             ctypes.windll.user32.UnregisterHotKey.restype = wintypes.BOOL
             
-            # MOD_ALT = 0x0001, MOD_CONTROL = 0x0002. Key 0x50 = 'P', Key 0x41 = 'A'
+            # MOD_ALT = 0x0001, MOD_CONTROL = 0x0002. Key 0x50 = 'P', Key 0x41 = 'A', VK_F9 = 0x78
             ctypes.windll.user32.RegisterHotKey(hwnd, 99, 0x0001 | 0x0002, 0x50)
             ctypes.windll.user32.RegisterHotKey(hwnd, 100, 0x0001 | 0x0002, 0x41)
+            ctypes.windll.user32.RegisterHotKey(hwnd, 101, 0, 0x78) # F9 Key
             
             from PyQt6.QtCore import QCoreApplication
             QCoreApplication.instance().aboutToQuit.connect(self.unregister_global_hotkey)
         except Exception as e:
-            print("Failed to register global hotkeys Alt+Ctrl+P/A:", e)
+            print("Failed to register global hotkeys Alt+Ctrl+P/A/F9:", e)
 
     def unregister_global_hotkey(self):
         try:
             hwnd = int(self.winId())
             ctypes.windll.user32.UnregisterHotKey(hwnd, 99)
             ctypes.windll.user32.UnregisterHotKey(hwnd, 100)
+            ctypes.windll.user32.UnregisterHotKey(hwnd, 101)
         except Exception:
             pass
 
@@ -1204,6 +1229,9 @@ class StudyDashboard(QWidget):
                     return True, 0
                 elif msg.message == 0x0312 and msg.wParam == 100:
                     self.adapt_hotkey_pressed.emit()
+                    return True, 0
+                elif msg.message == 0x0312 and msg.wParam == 101:
+                    self.turn_off_screen_requested.emit()
                     return True, 0
                 elif msg.message == 0x0218 and msg.wParam == 0x0012:
                     # WM_POWERBROADCAST and PBT_APMRESUMESUSPEND (system resuming from sleep/hibernate)
