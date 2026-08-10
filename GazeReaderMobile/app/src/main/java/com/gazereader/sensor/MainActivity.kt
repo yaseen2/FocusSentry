@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     private lateinit var tvActiveMin: TextView
     private lateinit var tvDistractedMin: TextView
     private lateinit var tvEfficiency: TextView
+    private lateinit var tvFocusDebt: TextView
     private lateinit var tvQuestNotice: TextView
     private lateinit var focusCircleView: MobileFocusCircleView
     private lateinit var barChart: BarChart
@@ -89,6 +90,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         tvActiveMin = findViewById(R.id.tvActiveMin)
         tvDistractedMin = findViewById(R.id.tvDistractedMin)
         tvEfficiency = findViewById(R.id.tvEfficiency)
+        tvFocusDebt = findViewById(R.id.tvFocusDebt)
         tvQuestNotice = findViewById(R.id.tvQuestNotice)
         focusCircleView = findViewById(R.id.focusCircleView)
         barChart = findViewById(R.id.barChart)
@@ -335,6 +337,16 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             tvActiveMin.text = actStr
             tvDistractedMin.text = distStr
             tvEfficiency.text = "${today.efficiency}%"
+
+            if (today.debt_seconds > 0) {
+                val dh = today.debt_seconds / 3600
+                val dm = (today.debt_seconds % 3600) / 60
+                tvFocusDebt.text = if (dm > 0) "${dh}h ${dm}m" else "${dh}h"
+                tvFocusDebt.setTextColor(Color.parseColor("#f59e0b"))
+            } else {
+                tvFocusDebt.text = "0m"
+                tvFocusDebt.setTextColor(Color.parseColor("#10b981"))
+            }
 
             focusCircleView.setProgress(today.active_seconds, today.target_seconds)
 

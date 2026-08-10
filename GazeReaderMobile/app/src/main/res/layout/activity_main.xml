@@ -251,6 +251,34 @@
                     android:textColor="#64748b"
                     android:textSize="11sp" />
             </LinearLayout>
+
+            <!-- FOCUS DEBT -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:background="@android:drawable/dialog_holo_dark_frame"
+                android:gravity="center"
+                android:layout_marginStart="6dp">
+
+                <TextView
+                    android:id="@+id/tvFocusDebt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0m"
+                    android:textColor="#10b981"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ Debt"
+                    android:textColor="#64748b"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- SENSOR SETTINGS CARD -->

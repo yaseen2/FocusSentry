@@ -683,9 +683,28 @@ class StudyDashboard(QWidget):
         j3_lay.addWidget(self.lbl_j_ratio)
         j3_lay.addWidget(lbl_j3_sub)
 
+        # Focus Debt Card
+        self.j_card4 = QFrame(self.journal_card)
+        self.j_card4.setMinimumHeight(70)
+        self.j_card4.setStyleSheet("background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px;")
+        j4_lay = QVBoxLayout(self.j_card4)
+        j4_lay.setContentsMargins(8, 10, 8, 10)
+        j4_lay.setSpacing(2)
+        self.lbl_j_debt = QLabel("0m", self.j_card4)
+        self.lbl_j_debt.setFont(QFont("Outfit", 16, QFont.Weight.Bold))
+        self.lbl_j_debt.setStyleSheet("color: #10b981; font-weight: bold;")
+        self.lbl_j_debt.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_j4_sub = QLabel("Focus Debt", self.j_card4)
+        lbl_j4_sub.setFont(QFont("Inter", 9))
+        lbl_j4_sub.setStyleSheet("color: #64748b;")
+        lbl_j4_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        j4_lay.addWidget(self.lbl_j_debt)
+        j4_lay.addWidget(lbl_j4_sub)
+
         grid_layout.addWidget(self.j_card1)
         grid_layout.addWidget(self.j_card2)
         grid_layout.addWidget(self.j_card3)
+        grid_layout.addWidget(self.j_card4)
         journal_layout.addLayout(grid_layout)
         
         # Target Notice Banner (Motivational Callout Badge)
@@ -927,9 +946,20 @@ class StudyDashboard(QWidget):
         self.lbl_j_distracted.setText(dist_h_str)
         self.lbl_j_ratio.setText(f"{efficiency}%")
 
+        debt_info = database.get_focus_debt_summary()
+        debt_sec = debt_info["debt_seconds"]
+        if debt_sec > 0:
+            dh = debt_sec // 3600
+            dm = (debt_sec % 3600) // 60
+            debt_str = f"{dh}h {dm}m" if dm > 0 else f"{dh}h"
+            self.lbl_j_debt.setText(debt_str)
+            self.lbl_j_debt.setStyleSheet("color: #f59e0b; font-weight: bold;")
+        else:
+            self.lbl_j_debt.setText("0m")
+            self.lbl_j_debt.setStyleSheet("color: #10b981; font-weight: bold;")
+
         if self.current_filter_mode == "DAY":
             # 1. Update Notice Callout Banner Wording and Styles with Focus Debt
-            debt_info = database.get_focus_debt_summary()
             target_seconds = debt_info['today_combined_goal']
             remaining_seconds = target_seconds - today_active
             if remaining_seconds > 0:
