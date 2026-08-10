@@ -1,6 +1,9 @@
 package com.gazereader.sensor
 
 import android.Manifest
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -34,6 +37,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     private lateinit var sbSensitivity: SeekBar
     private lateinit var tvSensVal: TextView
     private lateinit var btnToggle: Button
+    private lateinit var btnPinWidget: Button
 
     private lateinit var tvSessionPhase: TextView
     private lateinit var tvSessionTimer: TextView
@@ -78,6 +82,11 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         sbSensitivity = findViewById(R.id.sbSensitivity)
         tvSensVal = findViewById(R.id.tvSensVal)
         btnToggle = findViewById(R.id.btnToggle)
+        btnPinWidget = findViewById(R.id.btnPinWidget)
+
+        btnPinWidget.setOnClickListener {
+            pinWidgetToHomeScreen()
+        }
 
         tvSessionPhase = findViewById(R.id.tvSessionPhase)
         tvSessionTimer = findViewById(R.id.tvSessionTimer)
@@ -305,6 +314,27 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
             }
+        }
+    }
+
+    private fun pinWidgetToHomeScreen() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val appWidgetManager = getSystemService(AppWidgetManager::class.java)
+            val myProvider = ComponentName(this, GazeReaderWidget::class.java)
+            if (appWidgetManager != null && appWidgetManager.isRequestPinAppWidgetSupported) {
+                val pinnedWidgetCallbackIntent = Intent(this, GazeReaderWidget::class.java)
+                val successCallback = PendingIntent.getBroadcast(
+                    this,
+                    0,
+                    pinnedWidgetCallbackIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                appWidgetManager.requestPinAppWidget(myProvider, null, successCallback)
+            } else {
+                Toast.makeText(this, "Home screen widget pin is not supported on this launcher.", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(this, "To add widget: press and hold home screen -> Widgets -> GazeReader Tracker.", Toast.LENGTH_LONG).show()
         }
     }
 

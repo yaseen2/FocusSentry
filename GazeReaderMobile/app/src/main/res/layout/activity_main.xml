@@ -391,6 +391,16 @@
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:backgroundTint="#6366f1" />
+
+            <Button
+                android:id="@+id/btnPinWidget"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="Pin Widget to Home Screen"
+                android:textColor="#cbd5e1"
+                android:textSize="12sp"
+                android:backgroundTint="#1e293b"
+                android:layout_marginTop="10dp" />
         </LinearLayout>
 
     </LinearLayout>
