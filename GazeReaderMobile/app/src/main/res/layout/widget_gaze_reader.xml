@@ -30,12 +30,11 @@
             android:text="DAILY METRICS"
             android:textColor="#64748b"
             android:textSize="9sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05" />
+            android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- DIVIDER LINE -->
-    <View
+    <!-- DIVIDER LINE (FrameLayout is RemoteViews-compliant) -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#1e293b"
@@ -76,12 +75,13 @@
                 android:layout_marginTop="2dp" />
         </LinearLayout>
 
-        <!-- VERTICAL DIVIDER -->
-        <View
+        <!-- VERTICAL DIVIDER (FrameLayout is RemoteViews-compliant) -->
+        <FrameLayout
             android:layout_width="1dp"
             android:layout_height="match_parent"
             android:background="#1e293b"
-            android:layout_marginHorizontal="4dp" />
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp" />
 
         <!-- FOCUS DEBT BLOCK -->
         <LinearLayout
