@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, 
-    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider, QGridLayout
+    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider, QGridLayout, QScrollArea
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QRect, QTimer
 from PyQt6.QtGui import QFont, QImage, QPixmap, QColor, QPainter, QPen, QBrush
@@ -742,7 +742,6 @@ class StudyDashboard(QWidget):
         journal_layout.addWidget(self.lbl_target_notice)
         
         # Scroll Area for mini bar chart (to handle 24h or 30d without truncation)
-        from PyQt6.QtWidgets import QScrollArea
         self.chart_scroll = QScrollArea(self.journal_card)
         self.chart_scroll.setFixedHeight(180)
         self.chart_scroll.setWidgetResizable(True)
@@ -804,7 +803,6 @@ class StudyDashboard(QWidget):
         chart_row.addWidget(self.donut_chart)
         
         # Legend layout on right side
-        from PyQt6.QtWidgets import QGridLayout
         self.legend_widget = QWidget(self.distraction_card)
         self.legend_widget.setStyleSheet("background: transparent;")
         self.legend_layout = QGridLayout(self.legend_widget)
