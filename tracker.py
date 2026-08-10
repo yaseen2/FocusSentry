@@ -220,21 +220,13 @@ class FaceGazeTracker(QThread):
                                 lm[12].y < lm[0].y          # Hand upright in front of camera
                             )
                             
-                            REQUIRED_HOLD_FRAMES = 25 # ~1.5 seconds of continuous hold
+                            REQUIRED_HOLD_FRAMES = 1 # Instant trigger on first frame
                             if is_open_palm:
-                                self.gesture_hold_frames += 1
-                                progress_pct = min(100, int((self.gesture_hold_frames / REQUIRED_HOLD_FRAMES) * 100))
-                                
-                                # Render progress visual bar on camera preview
-                                bar_w = int((w - 40) * (progress_pct / 100.0))
-                                cv2.rectangle(frame, (20, h - 35), (20 + bar_w, h - 20), (16, 185, 129), -1)
-                                cv2.rectangle(frame, (20, h - 35), (w - 20, h - 20), (99, 102, 241), 1)
-                                cv2.putText(frame, f"HOLD PALM TO SLEEP SCREEN: {progress_pct}%", (20, h - 42), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (248, 250, 252), 1)
-                                
-                                if self.gesture_hold_frames >= REQUIRED_HOLD_FRAMES and (time.time() - self.last_gesture_time) > 5.0:
-                                    self.gesture_hold_frames = 0
+                                cv2.putText(frame, "PALM DETECTED - SCREEN SLEEPING", (20, h - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (16, 185, 129), 2)
+                                if (time.time() - self.last_gesture_time) > 4.0:
                                     self.last_gesture_time = time.time()
                                     self.gesture_screen_off_triggered.emit()
+                                self.gesture_hold_frames = 0
                             else:
                                 self.gesture_hold_frames = 0
                         else:
