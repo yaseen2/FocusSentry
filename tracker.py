@@ -168,17 +168,28 @@ class FaceGazeTracker(QThread):
 
                 # C. Check Gesture Display Power Off (Open Palm / Raised Hand)
                 try:
-                    gesture_enabled = database.get_setting("gesture_display_enabled", "1") == "1"
-                    if gesture_enabled and getattr(self, "frame_counter", 0) % 4 == 0:
+                    setting_val = str(database.get_setting("gesture_display_enabled", "1")).lower()
+                    gesture_enabled = setting_val in ["1", "true"]
+                    if gesture_enabled:
                         if not hasattr(self, "hands_model"):
+                            self.mp_drawing = mp.solutions.drawing_utils
                             self.hands_model = self.mp_hands.Hands(
                                 max_num_hands=1,
-                                min_detection_confidence=0.6,
-                                min_tracking_confidence=0.6
+                                min_detection_confidence=0.5,
+                                min_tracking_confidence=0.5
                             )
                         hands_res = self.hands_model.process(rgb_frame)
                         if hands_res.multi_hand_landmarks:
                             h_landmarks = hands_res.multi_hand_landmarks[0]
+                            # Draw visual hand skeleton markers on camera frame
+                            self.mp_drawing.draw_landmarks(
+                                frame,
+                                h_landmarks,
+                                self.mp_hands.HAND_CONNECTIONS,
+                                self.mp_drawing.DrawingSpec(color=(16, 185, 129), thickness=2, circle_radius=3),
+                                self.mp_drawing.DrawingSpec(color=(99, 102, 241), thickness=2, circle_radius=2)
+                            )
+                            
                             # Open Palm: Index(8), Middle(12), Ring(16), Pinky(20) tips extended above MCP joints (6, 10, 14, 18)
                             is_open_palm = (
                                 h_landmarks.landmark[8].y < h_landmarks.landmark[6].y and
@@ -188,7 +199,8 @@ class FaceGazeTracker(QThread):
                             )
                             if is_open_palm:
                                 self.gesture_hold_frames += 1
-                                if self.gesture_hold_frames >= 4 and (time.time() - self.last_gesture_time) > 6.0:
+                                cv2.putText(frame, "PALM DETECTED", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (16, 185, 129), 2)
+                                if self.gesture_hold_frames >= 2 and (time.time() - self.last_gesture_time) > 4.0:
                                     self.gesture_hold_frames = 0
                                     self.last_gesture_time = time.time()
                                     self.gesture_screen_off_triggered.emit()
@@ -196,7 +208,6 @@ class FaceGazeTracker(QThread):
                                 self.gesture_hold_frames = 0
                         else:
                             self.gesture_hold_frames = 0
-                    self.frame_counter = getattr(self, "frame_counter", 0) + 1
                 except Exception as e:
                     pass
 
