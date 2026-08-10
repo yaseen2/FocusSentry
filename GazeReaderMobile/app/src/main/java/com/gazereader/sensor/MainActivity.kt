@@ -310,6 +310,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
 
     override fun onJournalDataUpdated(data: JournalData) {
         cachedJournalData = data
+        GazeReaderWidget.saveAndRefreshWidget(this@MainActivity, data.today)
         runOnUiThread { renderJournalVisuals() }
     }
 
