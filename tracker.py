@@ -190,19 +190,34 @@ class FaceGazeTracker(QThread):
                                 self.mp_drawing.DrawingSpec(color=(99, 102, 241), thickness=2, circle_radius=2)
                             )
                             
-                            # Check hand size & orientation to ensure deliberate gesture
-                            wrist_y = h_landmarks.landmark[0].y
-                            middle_tip_y = h_landmarks.landmark[12].y
-                            hand_height = abs(wrist_y - middle_tip_y)
+                            lm = h_landmarks.landmark
+                            
+                            # 1. Palm Facing Camera Check (Horizontal span between Index MCP 5 and Pinky MCP 17)
+                            palm_width = abs(lm[17].x - lm[5].x)
+                            
+                            # 2. Fully Stretched Fingers Check (Distance from Wrist 0 to Tips vs MCP Joints)
+                            w_pt = np.array([lm[0].x, lm[0].y])
+                            def finger_ext_ratio(tip_idx, mcp_idx):
+                                d_tip = np.linalg.norm(np.array([lm[tip_idx].x, lm[tip_idx].y]) - w_pt)
+                                d_mcp = np.linalg.norm(np.array([lm[mcp_idx].x, lm[mcp_idx].y]) - w_pt)
+                                return d_tip / max(0.001, d_mcp)
 
-                            # Open Palm: 4 fingertips extended well above MCP joints & wrist below hand
+                            # Ratios for Index (8/5), Middle (12/9), Ring (16/13), Pinky (20/17), Thumb (4/2)
+                            index_ext = finger_ext_ratio(8, 5)
+                            middle_ext = finger_ext_ratio(12, 9)
+                            ring_ext = finger_ext_ratio(16, 13)
+                            pinky_ext = finger_ext_ratio(20, 17)
+                            thumb_ext = finger_ext_ratio(4, 2)
+
+                            # Open Palm: Facing camera flat + ALL 5 fingers fully stretched
                             is_open_palm = (
-                                hand_height > 0.18 and # Ensure hand is close enough & distinct
-                                middle_tip_y < wrist_y and # Hand upright
-                                h_landmarks.landmark[8].y < h_landmarks.landmark[6].y and
-                                h_landmarks.landmark[12].y < h_landmarks.landmark[10].y and
-                                h_landmarks.landmark[16].y < h_landmarks.landmark[14].y and
-                                h_landmarks.landmark[20].y < h_landmarks.landmark[18].y
+                                palm_width > 0.12 and       # Palm facing camera (not sideways/angled)
+                                index_ext > 1.60 and        # Index fully stretched
+                                middle_ext > 1.60 and       # Middle fully stretched
+                                ring_ext > 1.60 and         # Ring fully stretched
+                                pinky_ext > 1.60 and        # Pinky fully stretched
+                                thumb_ext > 1.40 and        # Thumb fully stretched outward
+                                lm[12].y < lm[0].y          # Hand upright in front of camera
                             )
                             
                             REQUIRED_HOLD_FRAMES = 25 # ~1.5 seconds of continuous hold
