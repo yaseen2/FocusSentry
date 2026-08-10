@@ -374,6 +374,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
             val history = if (currentTab == "WEEK") data.weekly else data.monthly
             var totalAct = 0
             var totalDist = 0
+            var maxBarVal = 9 * 3600f
             val entries = mutableListOf<BarEntry>()
             val xLabels = mutableListOf<String>()
 
@@ -381,9 +382,13 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 val e = history[i]
                 totalAct += e.active_seconds
                 totalDist += e.distracted_seconds
+                val barSum = (e.active_seconds + e.distracted_seconds).toFloat()
+                if (barSum > maxBarVal) maxBarVal = barSum
                 entries.add(BarEntry(i.toFloat(), floatArrayOf(e.active_seconds.toFloat(), e.distracted_seconds.toFloat())))
                 xLabels.add(e.day)
             }
+
+            barChart.axisLeft.axisMaximum = maxBarVal * 1.15f
 
             val actStr = if (totalAct >= 3600) "${totalAct / 3600}h ${(totalAct % 3600) / 60}m" else "${totalAct / 60}m"
             val distStr = if (totalDist >= 3600) "${totalDist / 3600}h ${(totalDist % 3600) / 60}m" else "${totalDist / 60}m"

@@ -625,23 +625,23 @@ class StudyDashboard(QWidget):
         self.btn_filter_week.clicked.connect(lambda: self.change_filter_mode("WEEK"))
         self.btn_filter_month.clicked.connect(lambda: self.change_filter_mode("MONTH"))
 
-        # Metrics rows (stacked side-by-side, larger sizes!)
-        grid_layout = QHBoxLayout()
-        grid_layout.setSpacing(10)
+        # Metrics 2x2 Grid Layout
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(8)
         
         # Focused Card
         self.j_card1 = QFrame(self.journal_card)
-        self.j_card1.setMinimumHeight(70)
+        self.j_card1.setMinimumHeight(65)
         self.j_card1.setStyleSheet("background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px;")
         j1_lay = QVBoxLayout(self.j_card1)
-        j1_lay.setContentsMargins(8, 10, 8, 10)
+        j1_lay.setContentsMargins(8, 8, 8, 8)
         j1_lay.setSpacing(2)
         self.lbl_j_active = QLabel("0m", self.j_card1)
-        self.lbl_j_active.setFont(QFont("Outfit", 16, QFont.Weight.Bold))
+        self.lbl_j_active.setFont(QFont("Outfit", 15, QFont.Weight.Bold))
         self.lbl_j_active.setStyleSheet("color: #6366f1; font-weight: bold;")
         self.lbl_j_active.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_j1_sub = QLabel("Focused", self.j_card1)
-        lbl_j1_sub.setFont(QFont("Inter", 9))
+        lbl_j1_sub.setFont(QFont("Inter", 8))
         lbl_j1_sub.setStyleSheet("color: #64748b;")
         lbl_j1_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         j1_lay.addWidget(self.lbl_j_active)
@@ -649,17 +649,17 @@ class StudyDashboard(QWidget):
         
         # Distracted Card
         self.j_card2 = QFrame(self.journal_card)
-        self.j_card2.setMinimumHeight(70)
+        self.j_card2.setMinimumHeight(65)
         self.j_card2.setStyleSheet("background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px;")
         j2_lay = QVBoxLayout(self.j_card2)
-        j2_lay.setContentsMargins(8, 10, 8, 10)
+        j2_lay.setContentsMargins(8, 8, 8, 8)
         j2_lay.setSpacing(2)
         self.lbl_j_distracted = QLabel("0m", self.j_card2)
-        self.lbl_j_distracted.setFont(QFont("Outfit", 16, QFont.Weight.Bold))
+        self.lbl_j_distracted.setFont(QFont("Outfit", 15, QFont.Weight.Bold))
         self.lbl_j_distracted.setStyleSheet("color: #f43f5e; font-weight: bold;")
         self.lbl_j_distracted.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_j2_sub = QLabel("Distracted", self.j_card2)
-        lbl_j2_sub.setFont(QFont("Inter", 9))
+        lbl_j2_sub.setFont(QFont("Inter", 8))
         lbl_j2_sub.setStyleSheet("color: #64748b;")
         lbl_j2_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         j2_lay.addWidget(self.lbl_j_distracted)
@@ -667,17 +667,17 @@ class StudyDashboard(QWidget):
 
         # Efficiency Card
         self.j_card3 = QFrame(self.journal_card)
-        self.j_card3.setMinimumHeight(70)
+        self.j_card3.setMinimumHeight(65)
         self.j_card3.setStyleSheet("background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px;")
         j3_lay = QVBoxLayout(self.j_card3)
-        j3_lay.setContentsMargins(8, 10, 8, 10)
+        j3_lay.setContentsMargins(8, 8, 8, 8)
         j3_lay.setSpacing(2)
         self.lbl_j_ratio = QLabel("100%", self.j_card3)
-        self.lbl_j_ratio.setFont(QFont("Outfit", 16, QFont.Weight.Bold))
+        self.lbl_j_ratio.setFont(QFont("Outfit", 15, QFont.Weight.Bold))
         self.lbl_j_ratio.setStyleSheet("color: #10b981; font-weight: bold;")
         self.lbl_j_ratio.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_j3_sub = QLabel("Efficiency", self.j_card3)
-        lbl_j3_sub.setFont(QFont("Inter", 9))
+        lbl_j3_sub.setFont(QFont("Inter", 8))
         lbl_j3_sub.setStyleSheet("color: #64748b;")
         lbl_j3_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         j3_lay.addWidget(self.lbl_j_ratio)
@@ -685,26 +685,26 @@ class StudyDashboard(QWidget):
 
         # Focus Debt Card
         self.j_card4 = QFrame(self.journal_card)
-        self.j_card4.setMinimumHeight(70)
+        self.j_card4.setMinimumHeight(65)
         self.j_card4.setStyleSheet("background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px;")
         j4_lay = QVBoxLayout(self.j_card4)
-        j4_lay.setContentsMargins(8, 10, 8, 10)
+        j4_lay.setContentsMargins(8, 8, 8, 8)
         j4_lay.setSpacing(2)
         self.lbl_j_debt = QLabel("0m", self.j_card4)
-        self.lbl_j_debt.setFont(QFont("Outfit", 16, QFont.Weight.Bold))
+        self.lbl_j_debt.setFont(QFont("Outfit", 15, QFont.Weight.Bold))
         self.lbl_j_debt.setStyleSheet("color: #10b981; font-weight: bold;")
         self.lbl_j_debt.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_j4_sub = QLabel("Focus Debt", self.j_card4)
-        lbl_j4_sub.setFont(QFont("Inter", 9))
+        lbl_j4_sub.setFont(QFont("Inter", 8))
         lbl_j4_sub.setStyleSheet("color: #64748b;")
         lbl_j4_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         j4_lay.addWidget(self.lbl_j_debt)
         j4_lay.addWidget(lbl_j4_sub)
 
-        grid_layout.addWidget(self.j_card1)
-        grid_layout.addWidget(self.j_card2)
-        grid_layout.addWidget(self.j_card3)
-        grid_layout.addWidget(self.j_card4)
+        grid_layout.addWidget(self.j_card1, 0, 0)
+        grid_layout.addWidget(self.j_card2, 0, 1)
+        grid_layout.addWidget(self.j_card3, 1, 0)
+        grid_layout.addWidget(self.j_card4, 1, 1)
         journal_layout.addLayout(grid_layout)
         
         # Target Notice Banner (Motivational Callout Badge)
@@ -1004,7 +1004,8 @@ class StudyDashboard(QWidget):
                 self.update_distraction_breakdown()
                 return
 
-            max_val = 1
+            # Benchmark scale against 9-Hour Daily Target (32,400s) minimum
+            max_val = 9 * 3600
             for e in history:
                 s = e["active_seconds"] + e["distracted_seconds"]
                 if s > max_val: max_val = s
@@ -1021,9 +1022,9 @@ class StudyDashboard(QWidget):
                 col_layout.setSpacing(3)
                 col_layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
 
-                # Draw visual heights (Max height is 110px now!)
-                act_h = max(2, int((entry["active_seconds"] / max_val) * 110))
-                dist_h = max(2, int((entry["distracted_seconds"] / max_val) * 110))
+                # Draw visual heights relative to 9-Hour baseline
+                act_h = int((entry["active_seconds"] / max_val) * 110) if entry["active_seconds"] > 0 else 0
+                dist_h = int((entry["distracted_seconds"] / max_val) * 110) if entry["distracted_seconds"] > 0 else 0
 
                 e_act_str = f"{entry['active_seconds'] // 3600}h {(entry['active_seconds'] % 3600) // 60}m" if entry['active_seconds'] >= 3600 else f"{round(entry['active_seconds']/60)}m"
                 e_dist_str = f"{entry['distracted_seconds'] // 3600}h {(entry['distracted_seconds'] % 3600) // 60}m" if entry['distracted_seconds'] >= 3600 else f"{round(entry['distracted_seconds']/60)}m"
