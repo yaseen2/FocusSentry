@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, 
-    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider
+    QListWidget, QListWidgetItem, QCheckBox, QFrame, QSlider, QGridLayout
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QRect, QTimer
 from PyQt6.QtGui import QFont, QImage, QPixmap, QColor, QPainter, QPen, QBrush
