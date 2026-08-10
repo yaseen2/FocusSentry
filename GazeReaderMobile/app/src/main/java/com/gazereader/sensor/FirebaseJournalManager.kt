@@ -9,6 +9,9 @@ data class TodayMetrics(
     val active_seconds: Int = 0,
     val distracted_seconds: Int = 0,
     val target_seconds: Int = 9 * 3600,
+    val base_target_seconds: Int = 9 * 3600,
+    val debt_seconds: Int = 0,
+    val debt_formatted: String = "",
     val efficiency: Int = 100,
     val last_updated: Long = 0L
 )
@@ -55,6 +58,9 @@ class FirebaseJournalManager {
                         active_seconds = (todaySnap.child("active_seconds").getValue(Long::class.java) ?: 0L).toInt(),
                         distracted_seconds = (todaySnap.child("distracted_seconds").getValue(Long::class.java) ?: 0L).toInt(),
                         target_seconds = (todaySnap.child("target_seconds").getValue(Long::class.java) ?: 32400L).toInt(),
+                        base_target_seconds = (todaySnap.child("base_target_seconds").getValue(Long::class.java) ?: 32400L).toInt(),
+                        debt_seconds = (todaySnap.child("debt_seconds").getValue(Long::class.java) ?: 0L).toInt(),
+                        debt_formatted = todaySnap.child("debt_formatted").getValue(String::class.java) ?: "",
                         efficiency = (todaySnap.child("efficiency").getValue(Long::class.java) ?: 100L).toInt(),
                         last_updated = todaySnap.child("last_updated").getValue(Long::class.java) ?: 0L
                     )

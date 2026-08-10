@@ -130,6 +130,7 @@ def push_firebase_journal_metrics_async():
             import urllib.request
             import json
             today_active, today_distracted = database.get_today_focus_time()
+            debt_info = database.get_focus_debt_summary()
             weekly = database.get_7_day_history()
             monthly = database.get_monthly_history()
             distractions = database.get_top_distractions()
@@ -140,7 +141,10 @@ def push_firebase_journal_metrics_async():
                 "today": {
                     "active_seconds": today_active,
                     "distracted_seconds": today_distracted,
-                    "target_seconds": 9 * 3600,
+                    "target_seconds": debt_info["today_combined_goal"],
+                    "base_target_seconds": debt_info["today_base_target"],
+                    "debt_seconds": debt_info["debt_seconds"],
+                    "debt_formatted": debt_info["debt_formatted"],
                     "efficiency": efficiency,
                     "last_updated": int(time.time())
                 },

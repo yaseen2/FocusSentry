@@ -253,5 +253,92 @@ def get_today_focus_time():
     distracted = row["total_distracted"] if row["total_distracted"] else 0
     return active, distracted
 
+def reset_db_starting_today():
+    """Resets study sessions and distraction logs to start fresh from today at 0h debt baseline."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM study_sessions")
+    cursor.execute("DELETE FROM distraction_logs")
+    
+    import datetime
+    today_start = int(datetime.datetime.combine(datetime.date.today(), datetime.time.min).timestamp())
+    cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('debt_start_timestamp', ?)", (str(today_start),))
+    conn.commit()
+    conn.close()
+
+def get_focus_debt_summary(daily_target_seconds=9*3600, daily_payoff_cap_seconds=2*3600):
+    import datetime
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT value FROM settings WHERE key = 'debt_start_timestamp'")
+    row = cursor.fetchone()
+    today_start = int(datetime.datetime.combine(datetime.date.today(), datetime.time.min).timestamp())
+    
+    if row:
+        try:
+            debt_start = int(row[0])
+        except ValueError:
+            debt_start = today_start
+    else:
+        debt_start = today_start
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('debt_start_timestamp', ?)", (str(debt_start),))
+        conn.commit()
+        
+    cursor.execute("""
+        SELECT 
+            date(timestamp, 'unixepoch', 'localtime') as cal_day,
+            SUM(active_seconds) as total_active
+        FROM study_sessions
+        WHERE timestamp >= ? AND timestamp < ?
+        GROUP BY cal_day
+    """, (debt_start, today_start))
+    past_days = cursor.fetchall()
+    
+    debt_start_date = datetime.datetime.fromtimestamp(debt_start).date()
+    today_date = datetime.date.today()
+    past_day_count = max(0, (today_date - debt_start_date).days)
+    
+    past_active_by_day = {r['cal_day']: r['total_active'] for r in past_days}
+    
+    cumulative_debt = 0
+    curr = debt_start_date
+    while curr < today_date:
+        day_str = curr.strftime('%Y-%m-%d')
+        act = past_active_by_day.get(day_str, 0)
+        deficit = daily_target_seconds - act
+        cumulative_debt += deficit
+        curr += datetime.timedelta(days=1)
+        
+    debt_seconds = max(0, cumulative_debt)
+    surplus_seconds = max(0, -cumulative_debt)
+    
+    payoff_target = min(debt_seconds, daily_payoff_cap_seconds)
+    today_combined_goal = daily_target_seconds + payoff_target
+    
+    if debt_seconds > 0:
+        dh = debt_seconds // 3600
+        dm = (debt_seconds % 3600) // 60
+        debt_fmt = f"{dh}h {dm}m Debt" if dm > 0 else f"{dh}h Debt"
+    else:
+        debt_fmt = "Debt Free 🏆"
+        
+    gh = today_combined_goal // 3600
+    gm = (today_combined_goal % 3600) // 60
+    goal_fmt = f"{gh}h {gm}m Goal" if gm > 0 else f"{gh}h Goal"
+    
+    conn.close()
+    return {
+        'debt_seconds': debt_seconds,
+        'surplus_seconds': surplus_seconds,
+        'today_base_target': daily_target_seconds,
+        'today_payoff_target': payoff_target,
+        'today_combined_goal': today_combined_goal,
+        'days_tracked': past_day_count + 1,
+        'debt_formatted': debt_fmt,
+        'goal_formatted': goal_fmt
+    }
+
 # Initialize database on module load
 init_db()
+

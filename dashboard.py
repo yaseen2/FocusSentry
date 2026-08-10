@@ -73,8 +73,9 @@ class FocusProgressCircle(QWidget):
         self.setMinimumSize(120, 120)
         self.setMaximumSize(120, 120)
         
-    def setProgress(self, active_seconds):
+    def setProgress(self, active_seconds, target_seconds=9*3600):
         self.active_seconds = active_seconds
+        self.target_seconds = max(1, target_seconds)
         self.update()
         
     def paintEvent(self, event):
@@ -927,27 +928,29 @@ class StudyDashboard(QWidget):
         self.lbl_j_ratio.setText(f"{efficiency}%")
 
         if self.current_filter_mode == "DAY":
-            # 1. Update Notice Callout Banner Wording and Styles
-            target_seconds = 9 * 3600 # 9 hours
+            # 1. Update Notice Callout Banner Wording and Styles with Focus Debt
+            debt_info = database.get_focus_debt_summary()
+            target_seconds = debt_info['today_combined_goal']
             remaining_seconds = target_seconds - today_active
             if remaining_seconds > 0:
                 rem_h = remaining_seconds // 3600
                 rem_m = (remaining_seconds % 3600) // 60
-                if rem_h > 0:
-                    time_str = f"{rem_h}h {rem_m}m"
+                time_str = f"{rem_h}h {rem_m}m" if rem_h > 0 else f"{rem_m}m"
+                if debt_info['debt_seconds'] > 0:
+                    self.lbl_target_notice.setText(f"Quest status: Focus for {time_str} more today to pay off debt ({debt_info['debt_formatted']}) and hit your {debt_info['goal_formatted']}! ⚡")
+                    self.lbl_target_notice.setStyleSheet("color: #f59e0b; background: rgba(245, 158, 11, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.2); margin-top: 4px;")
                 else:
-                    time_str = f"{rem_m}m"
-                self.lbl_target_notice.setText(f"Quest status: Focus for {time_str} more today to reach your 9h target! 🎯")
-                self.lbl_target_notice.setStyleSheet("color: #6366f1; background: rgba(99, 102, 241, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.1); margin-top: 4px;")
+                    self.lbl_target_notice.setText(f"Quest status: Focus for {time_str} more today to reach your 9h target! 🎯")
+                    self.lbl_target_notice.setStyleSheet("color: #6366f1; background: rgba(99, 102, 241, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.1); margin-top: 4px;")
             else:
-                self.lbl_target_notice.setText("Quest completed! You reached your daily 9-hour focus target! 🏆")
+                self.lbl_target_notice.setText("Quest completed! You reached today's focus target! 🏆")
                 self.lbl_target_notice.setStyleSheet("color: #10b981; background: rgba(16, 185, 129, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.1); margin-top: 4px;")
             
             # Show/Hide correct widgets
             self.lbl_target_notice.setVisible(True)
             self.chart_scroll.setVisible(False)
             self.circle_container.setVisible(True)
-            self.progress_circle.setProgress(today_active)
+            self.progress_circle.setProgress(today_active, target_seconds)
         else:
             # Hide target overlays and show bar charts
             self.lbl_target_notice.setVisible(False)

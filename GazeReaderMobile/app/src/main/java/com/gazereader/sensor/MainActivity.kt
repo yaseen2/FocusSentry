@@ -343,10 +343,15 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 val remH = remSec / 3600
                 val remM = (remSec % 3600) / 60
                 val timeStr = if (remH > 0) "${remH}h ${remM}m" else "${remM}m"
-                tvQuestNotice.text = "Quest status: Focus for $timeStr more today to reach your 9h target! 🎯"
-                tvQuestNotice.setTextColor(Color.parseColor("#6366f1"))
+                if (today.debt_seconds > 0) {
+                    tvQuestNotice.text = "Quest status: Focus for $timeStr more today to pay off debt (${today.debt_formatted}) and reach your goal! ⚡"
+                    tvQuestNotice.setTextColor(Color.parseColor("#f59e0b"))
+                } else {
+                    tvQuestNotice.text = "Quest status: Focus for $timeStr more today to reach your 9h target! 🎯"
+                    tvQuestNotice.setTextColor(Color.parseColor("#6366f1"))
+                }
             } else {
-                tvQuestNotice.text = "Quest completed! You reached your daily 9-hour focus target! 🏆"
+                tvQuestNotice.text = "Quest completed! You reached today's focus target! 🏆"
                 tvQuestNotice.setTextColor(Color.parseColor("#10b981"))
             }
         } else {
