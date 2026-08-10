@@ -219,6 +219,7 @@ class GazeReaderApp(QObject):
         self.tracker_thread.gaze_data_updated.connect(self.handle_tracker_gaze)
         self.tracker_thread.frame_ready.connect(self.dashboard.update_camera_frame)
         self.tracker_thread.gesture_screen_off_triggered.connect(self.turn_off_pc_display)
+        self.tracker_thread.gesture_scroll_triggered.connect(self.execute_mouse_scroll)
         
         # 3. Setup System Tray Icon
         self.tray_icon = QSystemTrayIcon(self)
@@ -632,6 +633,14 @@ class GazeReaderApp(QObject):
             print("⚡ Gesture / Hotkey Display Sleep Executed!")
         except Exception as e:
             print("Failed to turn off PC display:", e)
+
+    def execute_mouse_scroll(self, delta):
+        try:
+            import ctypes
+            # Win32 MOUSEEVENTF_WHEEL = 0x0800
+            ctypes.windll.user32.mouse_event(0x0800, 0, 0, delta, 0)
+        except Exception as e:
+            pass
 
     def run_sensor_server(self):
         try:

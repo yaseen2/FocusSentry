@@ -68,6 +68,16 @@ def init_db():
     if not row:
         cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('gesture_display_enabled', '1')")
 
+    cursor.execute("SELECT value FROM settings WHERE key = 'gesture_scroll_enabled'")
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('gesture_scroll_enabled', '1')")
+
+    cursor.execute("SELECT value FROM settings WHERE key = 'gesture_scroll_speed'")
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('gesture_scroll_speed', '40')")
+
     conn.commit()
     conn.close()
 

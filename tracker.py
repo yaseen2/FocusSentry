@@ -13,6 +13,7 @@ class FaceGazeTracker(QThread):
     gaze_data_updated = pyqtSignal(float, float, float, bool, bool) # (yaw, pitch, roll, is_face, is_eye_distracted)
     frame_ready = pyqtSignal(np.ndarray) # For optional camera dashboard preview
     gesture_screen_off_triggered = pyqtSignal()
+    gesture_scroll_triggered = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -229,6 +230,32 @@ class FaceGazeTracker(QThread):
                                 self.gesture_hold_frames = 0
                             else:
                                 self.gesture_hold_frames = 0
+
+                            # D. Check Touchless Mouse Scroll (Index Pointing Joystick)
+                            try:
+                                scroll_setting = str(database.get_setting("gesture_scroll_enabled", "1")).lower()
+                                if scroll_setting in ["1", "true"]:
+                                    # Index Pointing: Index extended, Middle, Ring, Pinky folded
+                                    is_pointing = (
+                                        index_ext > 1.50 and
+                                        middle_ext < 1.45 and
+                                        ring_ext < 1.45 and
+                                        pinky_ext < 1.45
+                                    )
+                                    if is_pointing:
+                                        scroll_speed_base = int(database.get_setting("gesture_scroll_speed", "40"))
+                                        y_diff = lm[5].y - lm[8].y # Positive = Point UP, Negative = Point DOWN
+                                        
+                                        if y_diff > 0.05: # Pointing UP
+                                            speed = max(10, int(scroll_speed_base * (y_diff / 0.12)))
+                                            cv2.putText(frame, f"SCROLLING UP ({speed})", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (16, 185, 129), 2)
+                                            self.gesture_scroll_triggered.emit(speed)
+                                        elif y_diff < -0.02: # Pointing DOWN
+                                            speed = max(10, int(scroll_speed_base * (abs(y_diff) / 0.12)))
+                                            cv2.putText(frame, f"SCROLLING DOWN ({speed})", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (99, 102, 241), 2)
+                                            self.gesture_scroll_triggered.emit(-speed)
+                            except Exception:
+                                pass
                         else:
                             self.gesture_hold_frames = 0
                 except Exception as e:

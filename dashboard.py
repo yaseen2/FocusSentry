@@ -393,14 +393,19 @@ class StudyDashboard(QWidget):
         self.chk_preview.setChecked(database.get_setting("preview_enabled", False))
         self.chk_preview.stateChanged.connect(self.toggle_video_preview)
 
-        self.chk_gesture_display = QCheckBox("Gesture screen off", pref_card)
+        self.chk_gesture_display = QCheckBox("Screen Off", pref_card)
         self.chk_gesture_display.setChecked(database.get_setting("gesture_display_enabled", True))
         self.chk_gesture_display.stateChanged.connect(lambda state: database.save_setting("gesture_display_enabled", state == 2))
+
+        self.chk_gesture_scroll = QCheckBox("Gesture Scroll", pref_card)
+        self.chk_gesture_scroll.setChecked(database.get_setting("gesture_scroll_enabled", True))
+        self.chk_gesture_scroll.stateChanged.connect(lambda state: database.save_setting("gesture_scroll_enabled", state == 2))
 
         chk_layout.addWidget(self.chk_startup)
         chk_layout.addWidget(self.chk_chime)
         chk_layout.addWidget(self.chk_preview)
         chk_layout.addWidget(self.chk_gesture_display)
+        chk_layout.addWidget(self.chk_gesture_scroll)
         pref_layout.addLayout(chk_layout)
 
         # Yaw Slider Row
