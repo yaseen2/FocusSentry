@@ -190,17 +190,33 @@ class FaceGazeTracker(QThread):
                                 self.mp_drawing.DrawingSpec(color=(99, 102, 241), thickness=2, circle_radius=2)
                             )
                             
-                            # Open Palm: Index(8), Middle(12), Ring(16), Pinky(20) tips extended above MCP joints (6, 10, 14, 18)
+                            # Check hand size & orientation to ensure deliberate gesture
+                            wrist_y = h_landmarks.landmark[0].y
+                            middle_tip_y = h_landmarks.landmark[12].y
+                            hand_height = abs(wrist_y - middle_tip_y)
+
+                            # Open Palm: 4 fingertips extended well above MCP joints & wrist below hand
                             is_open_palm = (
+                                hand_height > 0.18 and # Ensure hand is close enough & distinct
+                                middle_tip_y < wrist_y and # Hand upright
                                 h_landmarks.landmark[8].y < h_landmarks.landmark[6].y and
                                 h_landmarks.landmark[12].y < h_landmarks.landmark[10].y and
                                 h_landmarks.landmark[16].y < h_landmarks.landmark[14].y and
                                 h_landmarks.landmark[20].y < h_landmarks.landmark[18].y
                             )
+                            
+                            REQUIRED_HOLD_FRAMES = 25 # ~1.5 seconds of continuous hold
                             if is_open_palm:
                                 self.gesture_hold_frames += 1
-                                cv2.putText(frame, "PALM DETECTED", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (16, 185, 129), 2)
-                                if self.gesture_hold_frames >= 2 and (time.time() - self.last_gesture_time) > 4.0:
+                                progress_pct = min(100, int((self.gesture_hold_frames / REQUIRED_HOLD_FRAMES) * 100))
+                                
+                                # Render progress visual bar on camera preview
+                                bar_w = int((w - 40) * (progress_pct / 100.0))
+                                cv2.rectangle(frame, (20, h - 35), (20 + bar_w, h - 20), (16, 185, 129), -1)
+                                cv2.rectangle(frame, (20, h - 35), (w - 20, h - 20), (99, 102, 241), 1)
+                                cv2.putText(frame, f"HOLD PALM TO SLEEP SCREEN: {progress_pct}%", (20, h - 42), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (248, 250, 252), 1)
+                                
+                                if self.gesture_hold_frames >= REQUIRED_HOLD_FRAMES and (time.time() - self.last_gesture_time) > 5.0:
                                     self.gesture_hold_frames = 0
                                     self.last_gesture_time = time.time()
                                     self.gesture_screen_off_triggered.emit()
