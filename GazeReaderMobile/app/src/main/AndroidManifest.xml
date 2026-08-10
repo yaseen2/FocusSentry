@@ -61,7 +61,7 @@
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:value="@xml/gaze_reader_widget_info" />
+                android:resource="@xml/gaze_reader_widget_info" />
         </receiver>
     </application>
 
