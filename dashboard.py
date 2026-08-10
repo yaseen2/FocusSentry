@@ -401,11 +401,16 @@ class StudyDashboard(QWidget):
         self.chk_gesture_scroll.setChecked(database.get_setting("gesture_scroll_enabled", True))
         self.chk_gesture_scroll.stateChanged.connect(lambda state: database.save_setting("gesture_scroll_enabled", state == 2))
 
+        self.chk_air_mouse = QCheckBox("Air Mouse", pref_card)
+        self.chk_air_mouse.setChecked(database.get_setting("air_mouse_enabled", False))
+        self.chk_air_mouse.stateChanged.connect(lambda state: database.save_setting("air_mouse_enabled", state == 2))
+
         chk_layout.addWidget(self.chk_startup)
         chk_layout.addWidget(self.chk_chime)
         chk_layout.addWidget(self.chk_preview)
         chk_layout.addWidget(self.chk_gesture_display)
         chk_layout.addWidget(self.chk_gesture_scroll)
+        chk_layout.addWidget(self.chk_air_mouse)
         pref_layout.addLayout(chk_layout)
 
         # Yaw Slider Row

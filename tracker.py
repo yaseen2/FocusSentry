@@ -14,6 +14,7 @@ class FaceGazeTracker(QThread):
     frame_ready = pyqtSignal(np.ndarray) # For optional camera dashboard preview
     gesture_screen_off_triggered = pyqtSignal()
     gesture_scroll_triggered = pyqtSignal(int)
+    air_mouse_moved = pyqtSignal(int, int)
 
     def __init__(self):
         super().__init__()
@@ -231,29 +232,62 @@ class FaceGazeTracker(QThread):
                             else:
                                 self.gesture_hold_frames = 0
 
-                            # D. Check Touchless Mouse Scroll (Index Pointing Joystick)
+                            # D. Check Ergonomic Touchless Mouse Scroll (1 Finger UP / 2 Fingers DOWN)
                             try:
                                 scroll_setting = str(database.get_setting("gesture_scroll_enabled", "1")).lower()
                                 if scroll_setting in ["1", "true"]:
-                                    # Index Pointing: Index extended, Middle, Ring, Pinky folded
-                                    is_pointing = (
+                                    scroll_speed_base = int(database.get_setting("gesture_scroll_speed", "40"))
+                                    
+                                    # 1 Finger UP (Index extended, others folded)
+                                    is_1_finger_up = (
                                         index_ext > 1.50 and
                                         middle_ext < 1.45 and
                                         ring_ext < 1.45 and
                                         pinky_ext < 1.45
                                     )
-                                    if is_pointing:
-                                        scroll_speed_base = int(database.get_setting("gesture_scroll_speed", "40"))
-                                        y_diff = lm[5].y - lm[8].y # Positive = Point UP, Negative = Point DOWN
+                                    # 2 Fingers DOWN (Index + Middle extended up, Ring + Pinky folded)
+                                    is_2_fingers_down = (
+                                        index_ext > 1.50 and
+                                        middle_ext > 1.50 and
+                                        ring_ext < 1.45 and
+                                        pinky_ext < 1.45
+                                    )
+                                    
+                                    if is_1_finger_up:
+                                        cv2.putText(frame, "▲ SCROLLING UP (1 Finger)", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (16, 185, 129), 2)
+                                        self.gesture_scroll_triggered.emit(scroll_speed_base)
+                                    elif is_2_fingers_down:
+                                        cv2.putText(frame, "▼ SCROLLING DOWN (2 Fingers)", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (99, 102, 241), 2)
+                                        self.gesture_scroll_triggered.emit(-scroll_speed_base)
+                            except Exception:
+                                pass
+
+                            # E. Check Touchless Air Mouse Pointer Movement
+                            try:
+                                air_mouse_setting = str(database.get_setting("air_mouse_enabled", "0")).lower()
+                                if air_mouse_setting in ["1", "true"]:
+                                    # Use Index tip (8) for cursor positioning
+                                    raw_x = lm[8].x
+                                    raw_y = lm[8].y
+                                    
+                                    # Map 0.15..0.85 normalized frame coords to full screen width/height
+                                    import ctypes
+                                    scr_w = ctypes.windll.user32.GetSystemMetrics(0)
+                                    scr_h = ctypes.windll.user32.GetSystemMetrics(1)
+                                    
+                                    target_x = int(np.interp(raw_x, [0.15, 0.85], [0, scr_w]))
+                                    target_y = int(np.interp(raw_y, [0.15, 0.85], [0, scr_h]))
+                                    
+                                    # Exponential Smoothing Filter
+                                    if not hasattr(self, "smooth_cursor_x"):
+                                        self.smooth_cursor_x = target_x
+                                        self.smooth_cursor_y = target_y
+                                    else:
+                                        self.smooth_cursor_x = int(0.6 * self.smooth_cursor_x + 0.4 * target_x)
+                                        self.smooth_cursor_y = int(0.6 * self.smooth_cursor_y + 0.4 * target_y)
                                         
-                                        if y_diff > 0.05: # Pointing UP
-                                            speed = max(10, int(scroll_speed_base * (y_diff / 0.12)))
-                                            cv2.putText(frame, f"SCROLLING UP ({speed})", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (16, 185, 129), 2)
-                                            self.gesture_scroll_triggered.emit(speed)
-                                        elif y_diff < -0.02: # Pointing DOWN
-                                            speed = max(10, int(scroll_speed_base * (abs(y_diff) / 0.12)))
-                                            cv2.putText(frame, f"SCROLLING DOWN ({speed})", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (99, 102, 241), 2)
-                                            self.gesture_scroll_triggered.emit(-speed)
+                                    cv2.putText(frame, f"AIR MOUSE: {self.smooth_cursor_x},{self.smooth_cursor_y}", (20, h - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (129, 140, 248), 1)
+                                    self.air_mouse_moved.emit(self.smooth_cursor_x, self.smooth_cursor_y)
                             except Exception:
                                 pass
                         else:

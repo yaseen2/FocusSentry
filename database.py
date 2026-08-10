@@ -78,6 +78,11 @@ def init_db():
     if not row:
         cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('gesture_scroll_speed', '40')")
 
+    cursor.execute("SELECT value FROM settings WHERE key = 'air_mouse_enabled'")
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('air_mouse_enabled', '0')")
+
     conn.commit()
     conn.close()
 

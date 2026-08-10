@@ -220,6 +220,7 @@ class GazeReaderApp(QObject):
         self.tracker_thread.frame_ready.connect(self.dashboard.update_camera_frame)
         self.tracker_thread.gesture_screen_off_triggered.connect(self.turn_off_pc_display)
         self.tracker_thread.gesture_scroll_triggered.connect(self.execute_mouse_scroll)
+        self.tracker_thread.air_mouse_moved.connect(self.execute_air_mouse_move)
         
         # 3. Setup System Tray Icon
         self.tray_icon = QSystemTrayIcon(self)
@@ -639,6 +640,13 @@ class GazeReaderApp(QObject):
             import ctypes
             # Win32 MOUSEEVENTF_WHEEL = 0x0800
             ctypes.windll.user32.mouse_event(0x0800, 0, 0, delta, 0)
+        except Exception as e:
+            pass
+
+    def execute_air_mouse_move(self, x, y):
+        try:
+            import ctypes
+            ctypes.windll.user32.SetCursorPos(x, y)
         except Exception as e:
             pass
 
