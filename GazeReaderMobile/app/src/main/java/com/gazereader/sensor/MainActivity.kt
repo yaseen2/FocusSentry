@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -182,25 +183,11 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                             putString("laptop_port", port)
                             apply()
                         }
-                        Toast.makeText(this@MainActivity, "⚡ Auto-Synced Laptop IP: $ip", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, "Auto-synced laptop IP: $ip", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         })
-
-        if (intent?.getBooleanExtra("AUTO_START_TRACKING", false) == true && !SensorService.isRunning) {
-            val ip = etIp.text.toString().trim()
-            val port = etPort.text.toString().trim()
-            val sens = sbSensitivity.progress / 10.0f
-            if (ip.isNotEmpty() && port.isNotEmpty()) {
-                val serviceIntent = Intent(this, SensorService::class.java).apply {
-                    putExtra("ip", ip)
-                    putExtra("port", port)
-                    putExtra("sensitivity", sens)
-                }
-                ContextCompat.startForegroundService(this, serviceIntent)
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -211,57 +198,61 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
     }
 
     private var localTargetEndMs = 0L
-    private var activePhase = ""
 
     override fun onStatusChanged(status: SessionStatus) {
         liveSessionStatus = status
-        val nowMs = System.currentTimeMillis()
-
-        if (status.active) {
-            val isStartEvent = status.event.contains("STARTED") || status.event.contains("ENDED")
-            val isPhaseSwitch = activePhase != status.phase
-
-            if (isStartEvent || localTargetEndMs == 0L || isPhaseSwitch) {
-                val targetDurationSec = if (status.time_left > 0) status.time_left else status.duration
-                localTargetEndMs = nowMs + (targetDurationSec * 1000L)
-                activePhase = status.phase
+        
+        runOnUiThread {
+            if (status.event == "FOCUS_STARTED" || status.event == "BREAK_STARTED") {
+                val durationMs = (status.time_left.takeIf { it > 0 } ?: status.duration) * 1000L
+                localTargetEndMs = System.currentTimeMillis() + durationMs
             } else if (status.event == "SYNC_HEARTBEAT" && status.time_left > 0) {
-                // 5-minute periodic heartbeat calibration from PC
-                val currentPhoneRemainingSec = maxOf(0L, (localTargetEndMs - nowMs) / 1000L).toInt()
-                if (kotlin.math.abs(currentPhoneRemainingSec - status.time_left) >= 2) {
-                    localTargetEndMs = nowMs + (status.time_left * 1000L)
+                val expectedTargetEndMs = System.currentTimeMillis() + (status.time_left * 1000L)
+                if (kotlin.math.abs(localTargetEndMs - expectedTargetEndMs) >= 2000L) {
+                    localTargetEndMs = expectedTargetEndMs
                 }
+            } else if (status.event == "PAUSED" || status.event == "RESUMED" || status.event == "STOPPED") {
+                localTargetEndMs = 0L
             }
-        } else {
-            localTargetEndMs = 0L
-            activePhase = ""
+
+            if (status.active) {
+                tvSessionPhase.text = "${status.phase} PHASE"
+                tvSessionPhase.setTextColor(if (status.phase == "FOCUS") Color.parseColor("#6366f1") else Color.parseColor("#94a3b8"))
+                
+                var displaySec = status.time_left
+                if (localTargetEndMs > 0L) {
+                    val remainingMs = localTargetEndMs - System.currentTimeMillis()
+                    displaySec = (remainingMs / 1000L).coerceAtLeast(0L).toInt()
+                }
+                val m = displaySec / 60
+                val s = displaySec % 60
+                tvSessionTimer.text = String.format("%02d:%02d remaining", m, s)
+            } else {
+                tvSessionPhase.text = "STANDBY"
+                tvSessionPhase.setTextColor(Color.parseColor("#f8fafc"))
+                tvSessionTimer.text = "Waiting for Pomodoro session..."
+            }
         }
-        runOnUiThread { updateSessionUI() }
     }
 
     override fun onBreakEnded() {}
 
     private fun setupTabListeners() {
-        btnTabDay.setOnClickListener { selectTab("DAY") }
-        btnTabWeek.setOnClickListener { selectTab("WEEK") }
-        btnTabMonth.setOnClickListener { selectTab("MONTH") }
+        btnTabDay.setOnClickListener { switchTab("DAY") }
+        btnTabWeek.setOnClickListener { switchTab("WEEK") }
+        btnTabMonth.setOnClickListener { switchTab("MONTH") }
     }
 
-    private fun selectTab(tab: String) {
+    private fun switchTab(tab: String) {
         currentTab = tab
-        val activeBg = Color.parseColor("#6366f1")
-        val inactiveBg = Color.parseColor("#121829")
-        val activeTextColor = Color.parseColor("#ffffff")
-        val inactiveTextColor = Color.parseColor("#94a3b8")
+        btnTabDay.backgroundTintList = ColorStateList.valueOf(if (tab == "DAY") Color.parseColor("#6366f1") else Color.parseColor("#121829"))
+        btnTabDay.setTextColor(if (tab == "DAY") Color.WHITE else Color.parseColor("#94a3b8"))
 
-        btnTabDay.setBackgroundColor(if (tab == "DAY") activeBg else inactiveBg)
-        btnTabDay.setTextColor(if (tab == "DAY") activeTextColor else inactiveTextColor)
+        btnTabWeek.backgroundTintList = ColorStateList.valueOf(if (tab == "WEEK") Color.parseColor("#6366f1") else Color.parseColor("#121829"))
+        btnTabWeek.setTextColor(if (tab == "WEEK") Color.WHITE else Color.parseColor("#94a3b8"))
 
-        btnTabWeek.setBackgroundColor(if (tab == "WEEK") activeBg else inactiveBg)
-        btnTabWeek.setTextColor(if (tab == "WEEK") activeTextColor else inactiveTextColor)
-
-        btnTabMonth.setBackgroundColor(if (tab == "MONTH") activeBg else inactiveBg)
-        btnTabMonth.setTextColor(if (tab == "MONTH") activeTextColor else inactiveTextColor)
+        btnTabMonth.backgroundTintList = ColorStateList.valueOf(if (tab == "MONTH") Color.parseColor("#6366f1") else Color.parseColor("#121829"))
+        btnTabMonth.setTextColor(if (tab == "MONTH") Color.WHITE else Color.parseColor("#94a3b8"))
 
         renderJournalVisuals()
     }
@@ -295,7 +286,7 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
         }
 
         // Emerald Green Dashed 9-Hour Target Line
-        val targetLine = com.github.mikephil.charting.components.LimitLine(9 * 3600f, "9h Goal 🎯").apply {
+        val targetLine = com.github.mikephil.charting.components.LimitLine(9 * 3600f, "9h Goal").apply {
             lineColor = Color.parseColor("#10b981")
             lineWidth = 1.5f
             enableDashedLine(12f, 8f, 0f)
@@ -356,14 +347,14 @@ class MainActivity : AppCompatActivity(), FirebaseJournalManager.JournalListener
                 val remM = (remSec % 3600) / 60
                 val timeStr = if (remH > 0) "${remH}h ${remM}m" else "${remM}m"
                 if (today.debt_seconds > 0) {
-                    tvQuestNotice.text = "Quest status: Focus for $timeStr more today to pay off debt (${today.debt_formatted}) and reach your goal! ⚡"
+                    tvQuestNotice.text = "Quest status: Focus for $timeStr more today to pay off debt (${today.debt_formatted}) and reach your goal!"
                     tvQuestNotice.setTextColor(Color.parseColor("#f59e0b"))
                 } else {
-                    tvQuestNotice.text = "Quest status: Focus for $timeStr more today to reach your 9h target! 🎯"
+                    tvQuestNotice.text = "Quest status: Focus for $timeStr more today to reach your 9h target!"
                     tvQuestNotice.setTextColor(Color.parseColor("#6366f1"))
                 }
             } else {
-                tvQuestNotice.text = "Quest completed! You reached today's focus target! 🏆"
+                tvQuestNotice.text = "Quest completed! You reached today's focus target!"
                 tvQuestNotice.setTextColor(Color.parseColor("#10b981"))
             }
         } else {

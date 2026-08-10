@@ -25,7 +25,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="👁️ GazeReader"
+                android:text="GazeReader"
                 android:textColor="#6366f1"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -34,7 +34,7 @@
                 android:id="@+id/tvFirebaseSync"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔥 Cloud Synced"
+                android:text="Cloud Synced"
                 android:textColor="#10b981"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -82,7 +82,7 @@
                 android:id="@+id/btnStopAlarm"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
-                android:text="🔕 Stop Alarm"
+                android:text="Stop Alarm"
                 android:textColor="#ffffff"
                 android:backgroundTint="#ef4444"
                 android:textSize="12sp"
@@ -146,7 +146,7 @@
             android:id="@+id/tvQuestNotice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Quest status: Focus for 4h 30m more today to reach your 9h target! 🎯"
+            android:text="Quest status: Focus for 9h 0m more today to reach your 9h target!"
             android:textColor="#6366f1"
             android:textSize="13sp"
             android:padding="12dp"
@@ -162,122 +162,138 @@
             android:visibility="gone"
             android:layout_marginBottom="20dp" />
 
-        <!-- METRIC CARDS ROW -->
+        <!-- METRIC CARDS GRID (2x2) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_marginBottom="24dp">
 
-            <!-- FOCUSED -->
+            <!-- ROW 1: FOCUSED & DISTRACTED -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:drawable/dialog_holo_dark_frame"
-                android:gravity="center"
-                android:layout_marginEnd="6dp">
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
 
-                <TextView
-                    android:id="@+id/tvActiveMin"
-                    android:layout_width="wrap_content"
+                <!-- FOCUSED -->
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="0m"
-                    android:textColor="#6366f1"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="14dp"
+                    android:background="@android:drawable/dialog_holo_dark_frame"
+                    android:gravity="center"
+                    android:layout_marginEnd="5dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                    <TextView
+                        android:id="@+id/tvActiveMin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0m"
+                        android:textColor="#6366f1"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Focused"
+                        android:textColor="#64748b"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- DISTRACTED -->
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="🎯 Focused"
-                    android:textColor="#64748b"
-                    android:textSize="11sp" />
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="14dp"
+                    android:background="@android:drawable/dialog_holo_dark_frame"
+                    android:gravity="center"
+                    android:layout_marginStart="5dp">
+
+                    <TextView
+                        android:id="@+id/tvDistractedMin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0m"
+                        android:textColor="#f43f5e"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Distracted"
+                        android:textColor="#64748b"
+                        android:textSize="11sp" />
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- DISTRACTED -->
+            <!-- ROW 2: EFFICIENCY & FOCUS DEBT -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:drawable/dialog_holo_dark_frame"
-                android:gravity="center"
-                android:layout_marginEnd="6dp">
+                android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/tvDistractedMin"
-                    android:layout_width="wrap_content"
+                <!-- EFFICIENCY -->
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="0m"
-                    android:textColor="#f43f5e"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="14dp"
+                    android:background="@android:drawable/dialog_holo_dark_frame"
+                    android:gravity="center"
+                    android:layout_marginEnd="5dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                    <TextView
+                        android:id="@+id/tvEfficiency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="100%"
+                        android:textColor="#10b981"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Efficiency"
+                        android:textColor="#64748b"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- FOCUS DEBT -->
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="⚠️ Distracted"
-                    android:textColor="#64748b"
-                    android:textSize="11sp" />
-            </LinearLayout>
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="14dp"
+                    android:background="@android:drawable/dialog_holo_dark_frame"
+                    android:gravity="center"
+                    android:layout_marginStart="5dp">
 
-            <!-- EFFICIENCY -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:drawable/dialog_holo_dark_frame"
-                android:gravity="center">
+                    <TextView
+                        android:id="@+id/tvFocusDebt"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0m"
+                        android:textColor="#10b981"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvEfficiency"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="100%"
-                    android:textColor="#10b981"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⚡ Efficiency"
-                    android:textColor="#64748b"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <!-- FOCUS DEBT -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:drawable/dialog_holo_dark_frame"
-                android:gravity="center"
-                android:layout_marginStart="6dp">
-
-                <TextView
-                    android:id="@+id/tvFocusDebt"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0m"
-                    android:textColor="#10b981"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⚡ Debt"
-                    android:textColor="#64748b"
-                    android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Focus Debt"
+                        android:textColor="#64748b"
+                        android:textSize="11sp" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
@@ -291,67 +307,68 @@
             android:layout_marginBottom="24dp">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="⚙️ SENSOR SETTINGS &amp; CONNECTION"
-                android:textColor="#cbd5e1"
-                android:textSize="13sp"
+                android:text="SENSOR SETTINGS &amp; CONNECTION"
+                android:textColor="#94a3b8"
+                android:textSize="11sp"
                 android:textStyle="bold"
+                android:letterSpacing="0.05"
                 android:layout_marginBottom="12dp" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Laptop IP Address (Local Pings)"
-                android:textColor="#94a3b8"
-                android:textSize="12sp"
+                android:textColor="#64748b"
+                android:textSize="11sp"
                 android:layout_marginBottom="4dp" />
 
             <EditText
                 android:id="@+id/etIp"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:hint="e.g. 192.168.1.15"
-                android:textColor="#f8fafc"
-                android:textColorHint="#475569"
-                android:inputType="phone"
+                android:layout_height="40dp"
                 android:background="@android:drawable/editbox_background_normal"
-                android:padding="8dp"
+                android:hint="192.168.1.100"
+                android:textColorHint="#475569"
+                android:textColor="#ffffff"
+                android:textSize="13sp"
+                android:paddingHorizontal="10dp"
                 android:layout_marginBottom="12dp" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Laptop Port"
-                android:textColor="#94a3b8"
-                android:textSize="12sp"
+                android:textColor="#64748b"
+                android:textSize="11sp"
                 android:layout_marginBottom="4dp" />
 
             <EditText
                 android:id="@+id/etPort"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:hint="5001"
-                android:textColor="#f8fafc"
-                android:textColorHint="#475569"
-                android:inputType="number"
+                android:layout_height="40dp"
                 android:background="@android:drawable/editbox_background_normal"
-                android:padding="8dp"
-                android:layout_marginBottom="12dp" />
+                android:hint="5001"
+                android:textColorHint="#475569"
+                android:textColor="#ffffff"
+                android:textSize="13sp"
+                android:paddingHorizontal="10dp"
+                android:layout_marginBottom="16dp" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Motion Threshold (Sensitivity)"
-                android:textColor="#94a3b8"
-                android:textSize="12sp"
-                android:layout_marginBottom="4dp" />
+                android:textColor="#64748b"
+                android:textSize="11sp"
+                android:layout_marginBottom="6dp" />
 
             <SeekBar
                 android:id="@+id/sbSensitivity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="50"
+                android:max="100"
                 android:progress="20"
                 android:layout_marginBottom="4dp" />
 
@@ -361,19 +378,19 @@
                 android:layout_height="wrap_content"
                 android:text="2.0 m/s²"
                 android:textColor="#cbd5e1"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
 
             <Button
                 android:id="@+id/btnToggle"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:text="Start Tracking"
                 android:textColor="#ffffff"
-                android:backgroundTint="#6366f1"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:backgroundTint="#6366f1" />
         </LinearLayout>
 
     </LinearLayout>

@@ -252,7 +252,9 @@ class StudyDashboard(QWidget):
 
         # 1. Header Row
         header_layout = QHBoxLayout()
-        logo_lbl = QLabel("👁️  GazeReader", self)
+        # 1. Header Row
+        header_layout = QHBoxLayout()
+        logo_lbl = QLabel("GazeReader", self)
         logo_lbl.setFont(QFont("Outfit", 22, QFont.Weight.Bold))
         logo_lbl.setStyleSheet("color: #6366f1; font-weight: bold;")
         
@@ -319,7 +321,7 @@ class StudyDashboard(QWidget):
         status_row.addStretch()
         
         # Center calibration button
-        self.btn_set_center = QPushButton("🎯 Set Center", self.status_card)
+        self.btn_set_center = QPushButton("Set Center", self.status_card)
         self.btn_set_center.setObjectName("btn_set_center")
         self.btn_set_center.setFixedSize(85, 26)
         self.btn_set_center.setStyleSheet("""
@@ -354,7 +356,7 @@ class StudyDashboard(QWidget):
         pref_layout.setContentsMargins(16, 16, 16, 16)
         pref_layout.setSpacing(10)
 
-        pref_title = QLabel("⚙️ SYSTEM SETTINGS & SENSITIVITY", pref_card)
+        pref_title = QLabel("SYSTEM SETTINGS & SENSITIVITY", pref_card)
         pref_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
         pref_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
         pref_layout.addWidget(pref_title)
@@ -483,7 +485,7 @@ class StudyDashboard(QWidget):
         pomo_layout.addLayout(timer_box)
 
         # Start button
-        self.pomo_btn = QPushButton("🍅 Start Pomodoro Session", self.pomo_card)
+        self.pomo_btn = QPushButton("Start Pomodoro Session", self.pomo_card)
         self.pomo_btn.setFixedHeight(42)
         self.pomo_btn.setStyleSheet("""
             QPushButton {
@@ -507,7 +509,7 @@ class StudyDashboard(QWidget):
         black_layout.setContentsMargins(16, 16, 16, 16)
         black_layout.setSpacing(10)
 
-        black_title = QLabel("🚫 DISTRACTION BLACKLIST KEYWORDS", self.black_card)
+        black_title = QLabel("DISTRACTION BLACKLIST KEYWORDS", self.black_card)
         black_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
         black_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
         black_layout.addWidget(black_title)
@@ -563,7 +565,7 @@ class StudyDashboard(QWidget):
         # Title and Filter Row
         title_row = QHBoxLayout()
         
-        journal_title = QLabel("📈 STUDY JOURNAL SUMMARY", self.journal_card)
+        journal_title = QLabel("STUDY JOURNAL SUMMARY", self.journal_card)
         journal_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
         journal_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
         title_row.addWidget(journal_title)
@@ -766,7 +768,7 @@ class StudyDashboard(QWidget):
         dist_layout.setContentsMargins(16, 16, 16, 16)
         dist_layout.setSpacing(10)
         
-        dist_title = QLabel("📊 DISTRACTION BREAKDOWN", self.distraction_card)
+        dist_title = QLabel("DISTRACTION BREAKDOWN", self.distraction_card)
         dist_title.setFont(QFont("Outfit", 8, QFont.Weight.Bold))
         dist_title.setStyleSheet("color: #475569; font-weight: 800; letter-spacing: 1px;")
         dist_layout.addWidget(dist_title)
@@ -843,7 +845,7 @@ class StudyDashboard(QWidget):
     # --- Blacklist Controllers ---
     def load_blacklist_data(self):
         saved = database.get_setting("blacklist_keywords", "facebook,instagram,twitter,reddit,tiktok")
-        self.blacklist_items = [k.strip() for k in saved.split(",") if k.strip()]
+        self.blacklist_items = [k.strip() for k in saved.strip().split(",") if k.strip()]
         self.update_blacklist_listbox()
 
     def update_blacklist_listbox(self):
@@ -882,7 +884,7 @@ class StudyDashboard(QWidget):
         self.pomodoro_toggled.emit(self.pomodoro_active)
         
         if self.pomodoro_active:
-            self.pomo_btn.setText("⏹️ Stop Study Session")
+            self.pomo_btn.setText("Stop Study Session")
             self.pomo_btn.setStyleSheet("""
                 QPushButton {
                     background-color: rgba(244, 63, 94, 0.12);
