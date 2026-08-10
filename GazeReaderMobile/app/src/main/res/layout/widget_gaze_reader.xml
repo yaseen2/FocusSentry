@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:drawable/dialog_holo_dark_frame"
+    android:background="@drawable/widget_background"
     android:padding="14dp">
 
     <!-- HEADER ROW -->
@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="10dp">
 
         <TextView
             android:layout_width="0dp"
@@ -21,76 +21,75 @@
             android:layout_weight="1"
             android:text="GazeReader"
             android:textColor="#6366f1"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="DAILY METRICS"
-            android:textColor="#64748b"
-            android:textSize="9sp"
-            android:textStyle="bold" />
+            android:text="● LIVE"
+            android:textColor="#10b981"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
     </LinearLayout>
 
-    <!-- DIVIDER LINE (FrameLayout is RemoteViews-compliant) -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#1e293b"
-        android:layout_marginBottom="10dp" />
-
-    <!-- METRICS CONTENT -->
+    <!-- CARDS ROW -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:orientation="horizontal">
 
-        <!-- DAILY TARGET BLOCK -->
+        <!-- DAILY TARGET CARD -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="6dp">
+            android:background="@drawable/widget_card_bg"
+            android:padding="10dp"
+            android:gravity="center_vertical"
+            android:layout_marginRight="5dp">
 
             <TextView
                 android:id="@+id/widgetTvActive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0m / 9h 0m"
-                android:textColor="#6366f1"
-                android:textSize="15sp"
+                android:text="0m / 9h"
+                android:textColor="#f8fafc"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Daily Target"
-                android:textColor="#64748b"
+                android:textColor="#94a3b8"
                 android:textSize="10sp"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="1dp"
+                android:layout_marginBottom="6dp" />
+
+            <ProgressBar
+                android:id="@+id/widgetProgressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_progress_bar" />
         </LinearLayout>
 
-        <!-- VERTICAL DIVIDER (FrameLayout is RemoteViews-compliant) -->
-        <FrameLayout
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#1e293b"
-            android:layout_marginLeft="4dp"
-            android:layout_marginRight="4dp" />
-
-        <!-- FOCUS DEBT BLOCK -->
+        <!-- FOCUS DEBT CARD -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="6dp">
+            android:background="@drawable/widget_card_bg"
+            android:padding="10dp"
+            android:gravity="center_vertical"
+            android:layout_marginLeft="5dp">
 
             <TextView
                 android:id="@+id/widgetTvDebt"
@@ -98,17 +97,19 @@
                 android:layout_height="wrap_content"
                 android:text="0m"
                 android:textColor="#10b981"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/widgetTvDebtSub"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Focus Debt"
-                android:textColor="#64748b"
+                android:text="Focus Debt (Debt Free)"
+                android:textColor="#94a3b8"
                 android:textSize="10sp"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="1dp" />
         </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>

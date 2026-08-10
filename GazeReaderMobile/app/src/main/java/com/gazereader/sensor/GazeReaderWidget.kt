@@ -37,6 +37,7 @@ class GazeReaderWidget : AppWidgetProvider() {
             val targetStr = if (targetH > 0) "${targetH}h ${targetM}m" else "${targetM}m"
 
             views.setTextViewText(R.id.widgetTvActive, "$actStr / $targetStr")
+            views.setProgressBar(R.id.widgetProgressBar, targetSec.coerceAtLeast(1), activeSec.coerceAtMost(targetSec), false)
 
             // Format Debt
             if (debtSec > 0) {
@@ -45,9 +46,11 @@ class GazeReaderWidget : AppWidgetProvider() {
                 val dStr = if (dm > 0) "${dh}h ${dm}m" else "${dh}h"
                 views.setTextViewText(R.id.widgetTvDebt, dStr)
                 views.setTextColor(R.id.widgetTvDebt, Color.parseColor("#f59e0b")) // Amber
+                views.setTextViewText(R.id.widgetTvDebtSub, "Focus Deficit")
             } else {
                 views.setTextViewText(R.id.widgetTvDebt, "0m")
                 views.setTextColor(R.id.widgetTvDebt, Color.parseColor("#10b981")) // Emerald
+                views.setTextViewText(R.id.widgetTvDebtSub, "Debt Free")
             }
 
             // Launch MainActivity on widget click
