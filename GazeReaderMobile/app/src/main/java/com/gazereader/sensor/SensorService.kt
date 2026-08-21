@@ -21,7 +21,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.abs
 
-class SensorService : Service(), SensorEventListener, FirebaseSyncManager.SessionListener, FirebaseSyncManager.LaptopConfigListener {
+class SensorService : Service(), SensorEventListener, FirebaseSyncManager.SessionListener, FirebaseSyncManager.LaptopConfigListener, FirebaseJournalManager.JournalListener {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
@@ -38,6 +38,7 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
 
     private val serviceScope = CoroutineScope(Dispatchers.IO)
     private lateinit var firebaseSync: FirebaseSyncManager
+    private lateinit var firebaseJournal: FirebaseJournalManager
     private lateinit var breakAlarmHelper: BreakAlarmHelper
     private var isBreakActive = false
 
@@ -63,6 +64,9 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
         firebaseSync = FirebaseSyncManager()
         firebaseSync.startListening(this)
         firebaseSync.startListeningConfig(this)
+
+        firebaseJournal = FirebaseJournalManager()
+        firebaseJournal.startListening(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -259,9 +263,14 @@ class SensorService : Service(), SensorEventListener, FirebaseSyncManager.Sessio
             .build()
     }
 
+    override fun onJournalDataUpdated(data: JournalData) {
+        GazeReaderWidget.saveAndRefreshWidget(this, data.today)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         firebaseSync.stopListening()
+        firebaseJournal.stopListening()
         breakAlarmHelper.stopAlarm()
         breakAlarmHelper.clearBreakNotification()
         unregisterAccelerometer()

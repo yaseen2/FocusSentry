@@ -15,9 +15,34 @@ class GazeReaderWidget : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
+        fetchLatestAndRefresh(context)
     }
 
     companion object {
+        fun fetchLatestAndRefresh(context: Context) {
+            try {
+                val db = com.google.firebase.database.FirebaseDatabase.getInstance("https://gazereader-default-rtdb.firebaseio.com")
+                val ref = db.getReference("journal/today")
+                ref.get().addOnSuccessListener { snapshot ->
+                    if (snapshot.exists()) {
+                        val act = (snapshot.child("active_seconds").getValue(Long::class.java) ?: 0L).toInt()
+                        val tgt = (snapshot.child("target_seconds").getValue(Long::class.java) ?: 32400L).toInt()
+                        val debt = (snapshot.child("debt_seconds").getValue(Long::class.java) ?: 0L).toInt()
+                        val debtFmt = snapshot.child("debt_formatted").getValue(String::class.java) ?: ""
+                        val today = TodayMetrics(
+                            active_seconds = act,
+                            target_seconds = tgt,
+                            debt_seconds = debt,
+                            debt_formatted = debtFmt
+                        )
+                        saveAndRefreshWidget(context, today)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences("GazeReaderWidgetPrefs", Context.MODE_PRIVATE)
             val activeSec = prefs.getInt("active_seconds", 0)
