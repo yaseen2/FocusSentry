@@ -165,21 +165,29 @@ def push_firebase_journal_metrics_async():
             pass
     threading.Thread(target=_push, daemon=True).start()
 
+class QuietHTTPServer(HTTPServer):
+    def handle_error(self, request, client_address):
+        # Silently suppress expected client socket disconnects (WinError 10053 / 10054 / BrokenPipe)
+        pass
+
 class PhoneSensorHTTPHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return  # Suppress logging console output to keep stdout clean
 
     def do_GET(self):
-        if self.path == "/ping":
-            phone_active_event.set()
-            self.send_response(200)
-            self.send_header("Content-type", "text/plain")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(b"OK")
-        else:
-            self.send_response(404)
-            self.end_headers()
+        try:
+            if self.path == "/ping":
+                phone_active_event.set()
+                self.send_response(200)
+                self.send_header("Content-type", "text/plain")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(b"OK")
+            else:
+                self.send_response(404)
+                self.end_headers()
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+            pass
 
 class GazeReaderApp(QObject):
     def __init__(self):
@@ -652,7 +660,7 @@ class GazeReaderApp(QObject):
 
     def run_sensor_server(self):
         try:
-            self.server = HTTPServer(("0.0.0.0", 5001), PhoneSensorHTTPHandler)
+            self.server = QuietHTTPServer(("0.0.0.0", 5001), PhoneSensorHTTPHandler)
             self.server.serve_forever()
         except Exception as e:
             print("Failed to start phone sensor HTTP server:", e)
